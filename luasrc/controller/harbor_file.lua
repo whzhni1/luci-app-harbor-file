@@ -274,6 +274,7 @@ function index()
     entry({"admin", "local_fs", "package_install_start"}, call("api_package_install_start"), nil).leaf = true
     entry({"admin", "local_fs", "package_install_status"}, call("api_package_install_status"), nil).leaf = true
     entry({"admin", "local_fs", "chmod"}, call("api_chmod"), nil).leaf = true
+    entry({"admin", "local_fs", "batch_check"}, call("api_batch_check"), nil).leaf = true
 end
 
 local function write_json(data)
@@ -2904,16 +2905,31 @@ local function batch_transfer_path(mode)
     if not validate_write_request() then
         return
     end
+
+    local rename_map_json = luci.http.formvalue("rename_map")
+    local rename_map = {}
+    if rename_map_json and rename_map_json ~= "" then
+        local jsonc = require "luci.jsonc"
+        local ok, data = pcall(jsonc.parse, rename_map_json)
+        if ok and type(data) == "table" then
+            rename_map = data
+        end
+    end
+
+    local conflict_action = luci.http.formvalue("conflict_action") or "skip"
+
     local paths, parse_err = parse_path_array_param("sources")
     if not paths then
         write_json_status(400, "Bad Request", { code = 1, message = parse_err })
         return
     end
+
     local target_dir, target_err = get_writable_directory(luci.http.formvalue("target_dir"))
     if not target_dir then
         write_json_status(400, "Bad Request", { code = 1, message = target_err or "invalid target directory" })
         return
     end
+
     if not system_operations_allowed() and is_system_path(target_dir) then
         return deny_system_operation()
     end
@@ -2930,6 +2946,7 @@ local function batch_transfer_path(mode)
             required_size = required_size + (tonumber(item.stat.size) or 0)
         end
     end
+
     local has_space, available, space_err, required = ensure_directory_space(target_dir, required_size)
     if not has_space then
         write_json_status(507, "Insufficient Storage", {
@@ -2940,15 +2957,66 @@ local function batch_transfer_path(mode)
         return
     end
 
+    local nixio_fs = require "nixio.fs"
     local success_count = 0
+
     for index, item in ipairs(items) do
-        local ok, op_err = transfer_one(mode, item, target_dir)
-        if not ok then
-            write_batch_failure(500, "Transfer Failed", op_err, index - 1, success_count, item.path)
-            return
+        local target_name = rename_map[item.name] or item.name
+        local target = join_path(target_dir, target_name)
+        local target_stat = nixio_fs.lstat(target)
+        local should_skip = false
+
+        if target_stat then
+            if conflict_action == "replace" then
+                local ok, remove_err = remove_tree(target)
+                if not ok then
+                    write_batch_failure(500, "Remove Failed", remove_err, index - 1, success_count, item.path)
+                    return
+                end
+            elseif conflict_action == "skip" then
+                success_count = success_count + 1
+                should_skip = true
+            elseif conflict_action == "rename" then
+                local base = target_name
+                local name_no_ext, ext
+                local dot_pos = base:find("%.[^.]*$")
+                if dot_pos then
+                    name_no_ext = base:sub(1, dot_pos - 1)
+                    ext = base:sub(dot_pos)
+                else
+                    name_no_ext = base
+                    ext = ""
+                end
+                local count = 1
+                while true do
+                    local new_name = name_no_ext .. " (" .. count .. ")" .. ext
+                    local new_target = join_path(target_dir, new_name)
+                    if not nixio_fs.lstat(new_target) then
+                        target_name = new_name
+                        target = new_target
+                        break
+                    end
+                    count = count + 1
+                end
+            else
+                write_batch_failure(409, "Conflict", "target already exists", index - 1, success_count, item.path)
+                return
+            end
         end
-        success_count = success_count + 1
+
+        if not should_skip then
+            local original_name = item.name
+            item.name = target_name
+            local ok, op_err = transfer_one(mode, item, target_dir)
+            item.name = original_name
+            if not ok then
+                write_batch_failure(500, "Transfer Failed", op_err, index - 1, success_count, item.path)
+                return
+            end
+            success_count = success_count + 1
+        end
     end
+
     write_json({ code = 0, message = "success", data = { processed = #items, success_count = success_count } })
 end
 
@@ -5022,4 +5090,35 @@ function api_chmod()
         return
     end
     write_json({ code = 0, message = "success", data = { path = path, mode = mode_str } })
+end
+
+function api_batch_check()
+    if not validate_write_request() then
+        return
+    end
+    local action = luci.http.formvalue("action")
+    local sources_json = luci.http.formvalue("sources")
+    local target_dir = luci.http.formvalue("target_dir")
+    if not action or not sources_json or not target_dir then
+        write_json_status(400, "Bad Request", { code = 1, message = "missing parameters" })
+        return
+    end
+    local jsonc = require "luci.jsonc"
+    local ok, sources = pcall(jsonc.parse, sources_json)
+    if not ok or type(sources) ~= "table" then
+        write_json_status(400, "Bad Request", { code = 1, message = "invalid sources" })
+        return
+    end
+    local nixio_fs = require "nixio.fs"
+    local conflicts = {}
+    for _, src in ipairs(sources) do
+        local name = src:match("([^/]+)$")
+        if name then
+            local target = target_dir .. "/" .. name
+            if nixio_fs.lstat(target) then
+                table.insert(conflicts, { name = name, source = src, target = target })
+            end
+        end
+    end
+    write_json({ code = 0, message = "success", data = { conflicts = conflicts } })
 end

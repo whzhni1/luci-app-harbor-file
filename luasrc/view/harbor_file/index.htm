@@ -337,6 +337,9 @@
     padding: 22px 24px 30px;
     flex: 1;
     overflow: auto;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
 }
 
 .fm-page-title {
@@ -3319,6 +3322,7 @@
 <section id="fm_overwrite_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_overwrite_title">
     <div class="fm-dialog-header">
         <div id="fm_overwrite_title" class="fm-dialog-title"><%:Replace existing files%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
     </div>
     <div class="fm-overwrite-body">
         <p class="fm-overwrite-copy"><%:The following files already exist. Replace them with the uploaded files?%></p>
@@ -3650,7 +3654,8 @@
         archive_status: '<%=url("admin/local_fs/archive_status")%>',
         package_install_start: '<%=url("admin/local_fs/package_install_start")%>',
         package_install_status: '<%=url("admin/local_fs/package_install_status")%>',
-        chmod: '<%=url("admin/local_fs/chmod")%>'
+        chmod: '<%=url("admin/local_fs/chmod")%>',
+        batch_check: '<%=url("admin/local_fs/batch_check")%>'
     };
     var permBits = [8,7,6, 5,4,3, 2,1,0];
     var icon_base = '<%=resource%>/harbor_file/icons/';
@@ -3672,6 +3677,7 @@
         size: '<%:Size%>',
         type: '<%:Type%>',
         modified: '<%:Modified%>',
+        permissions: '<%:Permissions%>',
         system_disk: '<%:System Disk%>',
         empty: '<%:This folder is empty%>',
         unavailable: '<%:Path is not available%>',
@@ -3841,7 +3847,14 @@
         terminal_service_url: '<%:Service address%>',
         terminal_service_missing: '<%:The ttyd service is not installed or not configured%>',
         install_terminal_tool: '<%:Install terminal plugin%>',
-        web_service: '<%:Web service%>'
+        web_service: '<%:Web service%>',
+        file_conflict: '<%:File conflict%>',
+        overwrite: '<%:Overwrite%>', 
+        rename: '<%:Rename%>',
+        skip: '<%:Skip%>',
+        files: '<%:Files%>',
+        already_exist: '<%:already exist%>',
+        please_select_operation: '<%:Please select an operation%>'
     };
     var system_folder_paths = {
         '/bin': true,
@@ -4912,7 +4925,7 @@
         append_item_hover_row(card, labels.size, item.display_size);
         append_item_hover_row(card, labels.modified, item.display_mtime);
         append_item_hover_row(card, labels.path, item.path);
-        append_item_hover_row(card, 'Permissions', item.mode || '-');
+        append_item_hover_row(card, labels.permissions, item.mode || '-');
         card.style.display = 'block';
         position_item_hover_card(event);
     }
@@ -5525,6 +5538,16 @@
 
             node.addEventListener('touchstart', function(e) {
                 var touch = e.touches[0];
+                var main = node.querySelector('.fm-item-main');
+                if (main) {
+                    var rect = main.getBoundingClientRect();
+                    if (!(touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                          touch.clientY >= rect.top && touch.clientY <= rect.bottom)) {
+                        return;
+                    }
+                } else {
+                    return;
+                }
                 touchStartX = touch.clientX;
                 touchStartY = touch.clientY;
                 hasMoved = false;
@@ -5566,6 +5589,9 @@
                             if (!isDragging) {
                                 isDragging = true;
                                 hide_context_menus();
+                                var selected = is_item_selected(item) ? selected_items() : [item];
+                                state.drag_item = item;
+                                state.drag_items = selected;
                                 if (!dragClone) {
                                     dragClone = node.cloneNode(true);
                                     dragClone.style.position = 'fixed';
@@ -5576,6 +5602,34 @@
                                     dragClone.style.transform = 'scale(1.05)';
                                     dragClone.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
                                     dragClone.classList.remove('selected');
+
+                                    if (selected.length > 1) {
+                                        var badge = document.createElement('span');
+                                        badge.style.cssText = `
+                                            position: absolute;
+                                            top: -8px;
+                                            right: -8px;
+                                            background: #e74c3c;
+                                            color: #fff;
+                                            border-radius: 50%;
+                                            width: 24px;
+                                            height: 24px;
+                                            font-size: 12px;
+                                            font-weight: bold;
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+                                            border: 2px solid #fff;
+                                            pointer-events: none;
+                                            line-height: 1;
+                                            font-family: sans-serif;
+                                            z-index: 10000;
+                                        `;
+                                        badge.textContent = selected.length;
+                                        dragClone.appendChild(badge);
+                                    }
+
                                     document.body.appendChild(dragClone);
                                 }
                             }
@@ -5605,7 +5659,7 @@
                         var targetPath = dropTarget && dropTarget._fmItem && dropTarget._fmItem.type === 'directory' ?
                             dropTarget._fmItem.path : null;
                         if (targetPath && can_move_to_path(targetPath)) {
-                            confirm_drag_move([item], targetPath);
+                            confirm_drag_move(state.drag_items, targetPath);
                         }
                         document.querySelectorAll('.fm-drop-target').forEach(el => el.classList.remove('fm-drop-target'));
                         state.drag_item = null;
@@ -6872,6 +6926,41 @@
         set_status(mode === 'cut' ? labels.cut_to_clipboard : labels.copied_to_clipboard, 'success');
     }
 
+    function executePaste(action, items, target_path, conflict_action, rename_map) {
+        var success_message = action === 'copy' ? labels.copy_complete : labels.move_complete;
+        var url = action === 'copy' ? api.batch_copy : api.batch_move;
+        var data = {
+            sources: JSON.stringify(items.map(function(item) { return item.path; })),
+            target_dir: target_path
+        };
+        if (conflict_action) {
+            data.conflict_action = conflict_action;
+        }
+        if (rename_map) {
+            data.rename_map = JSON.stringify(rename_map);
+        }
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+            dataType: 'json',
+            success: function(res) {
+                if (res.code !== 0) {
+                    set_error_status(res.message || labels.operation_failed);
+                    return;
+                }
+                set_status(success_message, 'success');
+                if (action === 'move') {
+                    state.clipboard = null;
+                }
+                refresh_after_write();
+            },
+            error: function(xhr) {
+                set_error_status(batch_error_message(xhr, labels.operation_failed));
+            }
+        });
+    }
+
     function run_paste(target_path) {
         if (!has_clipboard()) {
             set_warning_status(labels.clipboard_empty);
@@ -6882,14 +6971,85 @@
             return;
         }
         var clipboard = state.clipboard;
-        var success_message = labels.paste_complete;
-        hide_context_menus();
-        run_batch_transfer(clipboard.mode === 'cut' ? 'move' : 'copy', clipboard.items, target_path, success_message, function() {
-            if (clipboard.mode === 'cut') {
-                state.clipboard = null;
+        var items = clipboard.items;
+        var action = clipboard.mode === 'cut' ? 'move' : 'copy';
+
+        $.ajax({
+            url: api.batch_check,
+            type: 'POST',
+            data: {
+                action: action,
+                sources: JSON.stringify(items.map(function(item) { return item.path; })),
+                target_dir: target_path
+            },
+            dataType: 'json',
+            success: function(res) {
+                if (res.code !== 0) {
+                    set_error_status(res.message || labels.request_failed);
+                    return;
+                }
+                var conflicts = (res.data && res.data.conflicts) || [];
+                if (conflicts.length === 0) {
+                    executePaste(action, items, target_path);
+                } else {
+                    showPasteConflictDialog(conflicts, action, items, target_path);
+                }
+            },
+            error: function(xhr) {
+                set_error_status(upload_error_message(xhr, labels.request_failed));
             }
-            refresh_after_write();
         });
+    }
+
+    function showPasteConflictDialog(conflicts, action, items, target_path) {
+        var list = document.getElementById('fm_conflict_list');
+        clear_node(list);
+        conflicts.forEach(function(item) {
+            var li = document.createElement('li');
+            li.textContent = item.name;
+            list.appendChild(li);
+        });
+
+        document.getElementById('fm_overwrite_title').textContent = labels.file_conflict;
+        document.querySelector('#fm_overwrite_dialog .fm-overwrite-copy').textContent =
+            conflicts.length + ' ' + labels.files + ' ' + labels.already_exist + '，' + labels.please_select_operation;
+
+        var cancelBtn = document.getElementById('fm_overwrite_cancel');
+        var confirmBtn = document.getElementById('fm_overwrite_confirm');
+        cancelBtn.style.display = 'none';
+        confirmBtn.style.display = 'none';
+        var actions = document.querySelector('#fm_overwrite_dialog .fm-dialog-actions');
+        var existingDynamic = actions.querySelectorAll('.fm-dynamic-paste-btn');
+        existingDynamic.forEach(function(el) { el.remove(); });
+
+        var replaceBtn = document.createElement('button');
+        replaceBtn.className = 'fm-dialog-action primary fm-dynamic-paste-btn';
+        replaceBtn.textContent = labels.overwrite;
+        replaceBtn.onclick = function() {
+            close_modal();
+            executePaste(action, items, target_path, 'replace');
+        };
+        actions.appendChild(replaceBtn);
+
+        var renameBtn = document.createElement('button');
+        renameBtn.className = 'fm-dialog-action fm-dynamic-paste-btn';
+        renameBtn.textContent = labels.rename;
+        renameBtn.onclick = function() {
+            close_modal();
+            executePaste(action, items, target_path, 'rename');
+        };
+        actions.appendChild(renameBtn);
+
+        var skipBtn = document.createElement('button');
+        skipBtn.className = 'fm-dialog-action fm-dynamic-paste-btn';
+        skipBtn.textContent = labels.skip;
+        skipBtn.onclick = function() {
+            close_modal();
+            executePaste(action, items, target_path, 'skip');
+        };
+        actions.appendChild(skipBtn);
+
+        open_modal('fm_overwrite_dialog');
     }
 
     function hide_context_menus() {
@@ -8298,6 +8458,339 @@
             close_modal();
         }
     });
+
+    (function() {
+        var content = document.getElementById('fm_content');
+        var longPressTimer = null;
+        var touchStartX = 0;
+        var touchStartY = 0;
+        var isLongPress = false;
+        var isDragging = false;
+        var isSelecting = false;
+        var scrollInterval = null;
+        var SCROLL_THRESHOLD = 50;
+        var SCROLL_SPEED = 8;
+        var DRAG_THRESHOLD = 10;
+        var touchStartOnBlank = false;
+
+        function startScroll(direction) {
+            stopScroll();
+            scrollInterval = setInterval(function() {
+                var delta = direction * SCROLL_SPEED;
+                window.scrollBy(0, delta);
+
+                if (isSelecting) {
+                    updateMarqueeFromTouch();
+                }
+            }, 16);
+        }
+
+        function stopScroll() {
+            if (scrollInterval) {
+                clearInterval(scrollInterval);
+                scrollInterval = null;
+            }
+        }
+
+        function updateMarqueeFromTouch() {
+            if (!isSelecting) return;
+
+            var touch = window._lastTouch;
+            if (!touch) return;
+
+            updateMarqueeSelection(touch.clientX, touch.clientY);
+        }
+
+        function updateMarqueeSelection(cx, cy) {
+            if (!state.selection_dragging) return;
+
+            var rect = selection_rect(
+                state.selection_start_x,
+                state.selection_start_y,
+                cx,
+                cy
+            );
+
+            var width = rect.right - rect.left;
+            var height = rect.bottom - rect.top;
+
+            if (width > 3 || height > 3) {
+                state.selection_moved = true;
+            }
+
+            var box = ensure_selection_box();
+
+            box.style.display = state.selection_moved ? 'block' : 'none';
+            box.style.left = rect.left + 'px';
+            box.style.top = rect.top + 'px';
+            box.style.width = width + 'px';
+            box.style.height = height + 'px';
+
+            if (!state.selection_moved) return;
+
+            var selected = state.selection_base.slice();
+            var seen = {};
+
+            selected.forEach(function(item) {
+                if (item && item.path) {
+                    seen[item.path] = true;
+                }
+            });
+
+            rendered_file_items().forEach(function(entry) {
+                if (entry.node.offsetParent === null || seen[entry.item.path]) {
+                    return;
+                }
+
+                if (rects_intersect(
+                    rect,
+                    entry.node.getBoundingClientRect()
+                )) {
+                    selected.push(entry.item);
+                    seen[entry.item.path] = true;
+                }
+            });
+
+            set_selected_items(
+                selected,
+                selected.length ? selected[selected.length - 1] : null,
+                state.selection_anchor
+            );
+        }
+
+        function isInFolderContent(clientX, clientY) {
+            var target = document.elementFromPoint(clientX, clientY);
+            var item = target ? target.closest('.fm-item') : null;
+
+            if (item) {
+                var main = item.querySelector('.fm-item-main');
+
+                if (main) {
+                    var rect = main.getBoundingClientRect();
+
+                    if (
+                        clientX >= rect.left &&
+                        clientX <= rect.right &&
+                        clientY >= rect.top &&
+                        clientY <= rect.bottom
+                    ) {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        content.addEventListener('touchstart', function(e) {
+            var touch = e.touches[0];
+
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            touchStartOnBlank = !isInFolderContent(
+                touchStartX,
+                touchStartY
+            );
+
+            if (!touchStartOnBlank) {
+                return;
+            }
+
+            if (state.drag_item) {
+                return;
+            }
+
+            isLongPress = false;
+            isDragging = false;
+            isSelecting = false;
+
+            state.selection_dragging = false;
+            state.selection_moved = false;
+
+            state.selection_base =
+                (e.ctrlKey || e.metaKey)
+                    ? selected_items()
+                    : [];
+
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                clear_selection();
+            }
+
+            state.selection_start_x = touchStartX;
+            state.selection_start_y = touchStartY;
+            state.selection_anchor =
+                state.selection_base.length
+                    ? state.selection_base[0]
+                    : null;
+
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+            }
+
+            longPressTimer = setTimeout(function() {
+                longPressTimer = null;
+
+                if (
+                    !isDragging &&
+                    touchStartOnBlank &&
+                    !state.drag_item
+                ) {
+                    isLongPress = true;
+                    show_context_menu(
+                        'fm_blank_menu',
+                        touchStartX,
+                        touchStartY
+                    );
+                }
+            }, 600);
+        }, { passive: true });
+
+        content.addEventListener('touchmove', function(e) {
+            var touch = e.touches[0];
+
+            window._lastTouch = touch;
+
+            if (state.drag_item) {
+                isSelecting = false;
+                isDragging = false;
+                state.selection_dragging = false;
+
+                if (state.selection_box) {
+                    state.selection_box.style.display = 'none';
+                }
+
+                var dragClientY = touch.clientY;
+                var dragTopDist = dragClientY;
+                var dragBottomDist =
+                    window.innerHeight - dragClientY;
+
+                if (dragTopDist < SCROLL_THRESHOLD) {
+                    startScroll(-1);
+                } else if (dragBottomDist < SCROLL_THRESHOLD) {
+                    startScroll(1);
+                } else {
+                    stopScroll();
+                }
+
+                return;
+            }
+
+            if (!touchStartOnBlank) {
+                return;
+            }
+
+            var dx = touch.clientX - touchStartX;
+            var dy = touch.clientY - touchStartY;
+            var absDx = Math.abs(dx);
+            var absDy = Math.abs(dy);
+            var distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (!isDragging) {
+                if (distance < DRAG_THRESHOLD) {
+                    return;
+                }
+
+                if (absDy > absDx * 1.5) {
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+
+                    touchStartOnBlank = false;
+                    return;
+                }
+            }
+
+            e.preventDefault();
+
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+
+            if (!isDragging) {
+                isDragging = true;
+                isSelecting = true;
+                state.selection_dragging = true;
+
+                state.selection_base =
+                    state.selection_base.length
+                        ? state.selection_base.slice()
+                        : [];
+
+                ensure_selection_box();
+
+                updateMarqueeSelection(
+                    touch.clientX,
+                    touch.clientY
+                );
+
+                document
+                    .getElementById('fm_content')
+                    .classList.add('selecting');
+            } else {
+                updateMarqueeSelection(
+                    touch.clientX,
+                    touch.clientY
+                );
+            }
+
+            var clientY = touch.clientY;
+            var topDist = clientY;
+            var bottomDist =
+                window.innerHeight - clientY;
+
+            if (topDist < SCROLL_THRESHOLD) {
+                startScroll(-1);
+            } else if (bottomDist < SCROLL_THRESHOLD) {
+                startScroll(1);
+            } else {
+                stopScroll();
+            }
+        }, { passive: false });
+
+        content.addEventListener('touchend', function(e) {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+
+            stopScroll();
+            window._lastTouch = null;
+
+            if (isSelecting) {
+                state.selection_dragging = false;
+
+                if (state.selection_box) {
+                    state.selection_box.style.display = 'none';
+                }
+
+                document
+                    .getElementById('fm_content')
+                    .classList.remove('selecting');
+            }
+
+            if (touchStartOnBlank && !state.drag_item) {
+                if (isSelecting) {
+                    if (!isDragging && !isLongPress) {
+                        clear_selection();
+                    }
+                } else {
+                    if (!isLongPress) {
+                        clear_selection();
+                    }
+                }
+            }
+
+            isSelecting = false;
+            isDragging = false;
+            isLongPress = false;
+            state.selection_dragging = false;
+            touchStartOnBlank = false;
+        }, { passive: true });
+    })();
 
     load_preferences(function() {
         refresh_navigation(function() {

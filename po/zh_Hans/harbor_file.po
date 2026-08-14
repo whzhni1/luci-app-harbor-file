@@ -668,6 +668,27 @@ msgstr "基本设置"
 msgid "Web service"
 msgstr "Web服务"
 
+msgid "File conflict"
+msgstr "文件冲突"
+
+msgid "Overwrite"
+msgstr "覆盖"
+
+msgid "Rename"
+msgstr "重命名"
+
+msgid "Skip"
+msgstr "跳过"
+
+msgid "Files"
+msgstr "文件"
+
+msgid "already exist"
+msgstr "已存在"
+
+msgid "Please select an operation"
+msgstr "请选择操作"
+
 msgid "Web service configuration saved"
 msgstr "Web服务配置已保存"
 
