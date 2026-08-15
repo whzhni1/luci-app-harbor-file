@@ -120,6 +120,35 @@
     display: none;
 }
 
+.fm-breadcrumb-container {
+    display: inline-flex;
+    align-items: center;
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.fm-breadcrumb-container::-webkit-scrollbar {
+    display: none;
+}
+
+.fm-address-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--fm-text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 0 4px;
+}
+
+.fm-address-input:focus {
+    border: none;
+    box-shadow: none;
+}
+
 .fm-crumb {
     flex: 0 0 auto;
     padding: 4px 7px;
@@ -3951,6 +3980,7 @@
         upload_speed: 0,
         upload_last_loaded: 0,
         upload_last_tick: 0,
+        address_editing: false,
         view_mode: 'medium',
         transfer_action: null,
         target_path: '/',
@@ -8034,28 +8064,112 @@
     function render_breadcrumb() {
         var address = document.getElementById('fm_address');
         clear_node(address);
+
+        var crumbContainer = document.createElement('span');
+        crumbContainer.className = 'fm-breadcrumb-container';
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'fm_address_input';
+        input.className = 'fm-address-input';
+        input.style.display = 'none';
+        address.appendChild(crumbContainer);
+        address.appendChild(input);
+
+        function addCrumb(container, label, on_click) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'fm-crumb';
+            button.textContent = label;
+            button.addEventListener('click', on_click);
+            if (container.childNodes.length) {
+                var separator = document.createElement('span');
+                separator.className = 'fm-crumb-separator';
+                separator.textContent = '›';
+                container.appendChild(separator);
+            }
+            container.appendChild(button);
+        }
+
         if (!state.current) {
+            input.style.display = 'none';
             return;
         }
+
         if (state.current.kind === 'quick_access') {
-            append_crumb(address, labels.quick_access, function() {});
+            addCrumb(crumbContainer, labels.quick_access, function() {});
+            input.style.display = 'none';
             return;
         }
-        append_crumb(address, labels.this_pc, function() { show_virtual('this_pc', true); });
+
+        addCrumb(crumbContainer, labels.this_pc, function() { show_virtual('this_pc', true); });
+
         if (state.current.kind !== 'directory') {
+            input.style.display = 'none';
             return;
         }
+
         var parts = state.current.path.split('/').filter(function(part) { return part !== ''; });
         var current_path = '';
         if (!parts.length) {
-            append_crumb(address, labels.system_disk, function() { open_path('/', true); });
+            addCrumb(crumbContainer, labels.system_disk, function() { open_path('/', true); });
+            input.value = '/';
+            input.style.display = 'none';
+            crumbContainer.style.display = 'inline-flex';
             return;
         }
         parts.forEach(function(part) {
             current_path += '/' + part;
             var target = current_path;
-            append_crumb(address, part, function() { open_path(target, true); });
+            addCrumb(crumbContainer, part, function() { open_path(target, true); });
         });
+
+        input.value = state.current.path;
+        input.style.display = 'none';
+        crumbContainer.style.display = 'inline-flex';
+
+        input.onkeydown = function(e) {
+            if (e.key === 'Enter') {
+                var path = this.value.trim();
+                if (path && path.charAt(0) === '/') {
+                    open_path(path, true);
+                    exit_address_edit();
+                } else if (path) {
+                    set_warning_status('Please enter an absolute path starting with /');
+                }
+            } else if (e.key === 'Escape') {
+                exit_address_edit();
+            }
+        };
+        input.onblur = function() {
+            setTimeout(function() {
+                if (state.address_editing) {
+                    exit_address_edit();
+                }
+            }, 100);
+        };
+    }
+
+    function enter_address_edit() {
+        if (state.address_editing) return;
+        var input = document.getElementById('fm_address_input');
+        var container = document.querySelector('.fm-breadcrumb-container');
+        if (!input || !container) return;
+        state.address_editing = true;
+        container.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.value = state.current.path;
+        input.focus();
+        input.select();
+    }
+
+    function exit_address_edit() {
+        if (!state.address_editing) return;
+        var input = document.getElementById('fm_address_input');
+        var container = document.querySelector('.fm-breadcrumb-container');
+        if (!input || !container) return;
+        state.address_editing = false;
+        input.style.display = 'none';
+        container.style.display = 'inline-flex';
     }
 
     function refresh_navigation(on_done) {
@@ -8795,6 +8909,14 @@
     load_preferences(function() {
         refresh_navigation(function() {
             show_virtual('quick_access', true);
+            document.getElementById('fm_address').addEventListener('click', function(e) {
+                if (e.target.closest('.fm-crumb')) {
+                    return;
+                }
+                if (state.current && state.current.kind === 'directory' && !state.address_editing) {
+                    enter_address_edit();
+                }
+            });
         });
     });
 })();
