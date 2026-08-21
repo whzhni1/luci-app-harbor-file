@@ -9,17 +9,14 @@ jobs:
     strategy:
       matrix:
         sdk: [openwrt-24.10, openwrt-25.12]
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: sbwml/openwrt-gh-action-sdk@main
         env:
           ARCH: x86_64-${{ matrix.sdk }}
           FEEDNAME: packages_ci
-          PACKAGES: .
+          PACKAGES: luci-app-harbor-file
           NO_REFRESH_CHECK: true
-
       - uses: actions/upload-artifact@v4
         with:
           name: ipk-${{ matrix.sdk }}
@@ -30,18 +27,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
-
       - id: ver
-        run: echo "tag=v$(awk -F':=' '/^PKG_VERSION:=/{print $2}' Makefile)" >> $GITHUB_OUTPUT
-
+        run: echo "tag=v$(awk -F':=' '/^PKG_VERSION:=/{print $2}' luci-app-harbor-file/Makefile)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           path: ipks
           merge-multiple: true
-
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
