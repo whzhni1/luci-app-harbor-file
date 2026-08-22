@@ -39,7 +39,7 @@ jobs:
           ref: code-refactoring
 
       - id: ver
-        run: echo "tag=v$(awk -F':=' '/^PKG_VERSION:=/{print $2}' packages_ci/luci-app-harbor-file/Makefile)" >> $GITHUB_OUTPUT
+        run: echo "tag=v$(awk -F':=' '/^PKG_VERSION:=/{print $2}' luci-app-harbor-file/Makefile)" >> $GITHUB_OUTPUT
 
       - uses: actions/download-artifact@v4
         with:
