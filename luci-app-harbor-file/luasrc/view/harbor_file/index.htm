@@ -1,0 +1,1957 @@
+<%+header%>
+<link rel="stylesheet" href="<%=resource%>/harbor_file/common.css">
+<link rel="stylesheet" href="<%=resource%>/harbor_file/css/file-manager.css">
+<link rel="stylesheet" href="<%=resource%>/harbor_file/css/window-manager.css">
+<link rel="stylesheet" href="<%=resource%>/harbor_file/css/document-windows.css">
+<style>
+:root { --fm-icon-close: url('<%=resource%>/harbor_file/icons/close.svg'); }
+</style>
+
+<script type="text/javascript">
+// HarborFile bootstrap: inject LuCI template values (URLs, translations, resource paths).
+// External .js files are served statically, so all template tags must live here.
+window.HarborFile = {
+    init: function (config) {
+        this.api = config.api;
+        this.labels = config.labels;
+        this.resource = config.resource;
+        return this;
+    }
+};
+HarborFile.init({
+    api: {
+        navigation: '<%=url("admin/local_fs/navigation")%>',
+        terminal_info: '<%=url("admin/local_fs/terminal_info")%>',
+        terminal_tool_install_start: '<%=url("admin/local_fs/terminal_tool_install_start")%>',
+        preferences: '<%=url("admin/local_fs/preferences")%>',
+        save_preferences: '<%=url("admin/local_fs/save_preferences")%>',
+        nginx_install_start: '<%=url("admin/local_fs/nginx_install_start")%>',
+        list: '<%=url("admin/local_fs/list")%>',
+        download: '<%=url("admin/local_fs/download")%>',
+        read_text: '<%=url("admin/local_fs/read_text")%>',
+        read_binary: '<%=url("admin/local_fs/read_binary")%>',
+        save_text: '<%=url("admin/local_fs/save_text")%>',
+        read_editor_file: '<%=url("admin/local_fs/read_editor_file")%>',
+        save_editor_upload: '<%=url("admin/local_fs/save_editor_upload")%>',
+        image: '<%=url("admin/local_fs/image")%>',
+        thumbnail: '<%=url("admin/local_fs/thumbnail")%>',
+        thumbnail_generate_start: '<%=url("admin/local_fs/thumbnail_generate_start")%>',
+        thumbnail_generate_status: '<%=url("admin/local_fs/thumbnail_generate_status")%>',
+        thumbnail_tool_install_start: '<%=url("admin/local_fs/thumbnail_tool_install_start")%>',
+        pdf: '<%=url("admin/local_fs/pdf")%>',
+        video: '<%=url("admin/local_fs/video")%>',
+        video_check: '<%=url("admin/local_fs/video_check")%>',
+        upload_check: '<%=url("admin/local_fs/upload_check")%>',
+        upload: '<%=url("admin/local_fs/upload")%>',
+        create_directory: '<%=url("admin/local_fs/create_directory")%>',
+        create_file: '<%=url("admin/local_fs/create_file")%>',
+        rename: '<%=url("admin/local_fs/rename")%>',
+        delete_item: '<%=url("admin/local_fs/delete")%>',
+        copy: '<%=url("admin/local_fs/copy")%>',
+        move: '<%=url("admin/local_fs/move")%>',
+        batch_copy: '<%=url("admin/local_fs/batch_copy")%>',
+        batch_move: '<%=url("admin/local_fs/batch_move")%>',
+        batch_delete: '<%=url("admin/local_fs/batch_delete")%>',
+        archive_create_start: '<%=url("admin/local_fs/archive_create_start")%>',
+        archive_extract_start: '<%=url("admin/local_fs/archive_extract_start")%>',
+        archive_status: '<%=url("admin/local_fs/archive_status")%>',
+        tool_install_start: '<%=url("admin/local_fs/tool_install_start")%>',
+        package_install_start: '<%=url("admin/local_fs/package_install_start")%>',
+        package_install_status: '<%=url("admin/local_fs/package_install_status")%>',
+        chmod: '<%=url("admin/local_fs/chmod")%>',
+        batch_check: '<%=url("admin/local_fs/batch_check")%>',
+        detect_type: '<%=url("admin/local_fs/detect_type")%>',
+        save_last_directory: '<%=url("admin/local_fs/save_last_directory")%>',
+        save_show_line_numbers: '<%=url("admin/local_fs/save_show_line_numbers")%>'
+    },
+    labels: {
+        video_format_error: '<%:This video format or codec is not supported by the browser%>',
+        video_no_range: '<%:Web server does not support Range requests and available memory is too small to play this video%>',
+        quick_access: '<%:Quick access%>',
+        this_pc: '<%:This device%>',
+        frequent_folders: '<%:Frequent folders%>',
+        folders: '<%:Folders%>',
+        drives: '<%:Storage space%>',
+        folder: '<%:Folder%>',
+        file: '<%:File%>',
+        name: '<%:Name%>',
+        path: '<%:Path%>',
+        size: '<%:Size%>',
+        type: '<%:Type%>',
+        modified: '<%:Modified%>',
+        permissions: '<%:Permissions%>',
+        system_disk: '<%:System Disk%>',
+        empty: '<%:This folder is empty%>',
+        unavailable: '<%:Path is not available%>',
+        request_failed: '<%:Request failed%>',
+        unsupported: '<%:This file type cannot be opened%>',
+        pdf_not_supported: '<%:This browser does not support PDF preview%>',
+        download_file: '<%:Download file%>',
+        download_failed: '<%:Download failed%>',
+        edit_text: '<%:Edit text%>',
+        open_binary: '<%:Open hexadecimal%>',
+        binary_viewer: '<%:Binary viewer%>',
+        binary_offset: '<%:Offset%>',
+        binary_hex: '<%:Hex%>',
+        binary_ascii: '<%:ASCII%>',
+        binary_read: '<%:Read%>',
+        binary_start: '<%:Start position%>',
+        binary_length: '<%:Read size%>',
+        binary_load: '<%:Confirm range%>',
+        invalid_range: '<%:Enter a valid range. Read size must be 1-16 KB%>',
+        truncated: '<%:The file is too large. Only the first part is shown%>',
+        bytes: '<%:bytes%>',
+        save_success: '<%:Save successful%>',
+        save_failed: '<%:Save failed%>',
+        readonly_large: '<%:The file is too large and can only be previewed in read-only mode%>',
+        readonly_system: '<%:System folder operations are disabled. This file cannot be saved%>',
+        discard_text_changes: '<%:This content has been modified. Discard unsaved changes?%>',
+        text_size: '<%:Size%>',
+        text_lines: '<%:Lines%>',
+        text_line: '<%:Line%>',
+        text_column: '<%:Column%>',
+        upload_to: '<%:Upload to%>',
+        uploading: '<%:Uploading%>',
+        upload_speed: '<%:Upload speed%>',
+        upload_complete: '<%:Upload complete%>',
+        upload_failed: '<%:Upload failed%>',
+        upload_busy: '<%:An upload is already in progress%>',
+        no_files: '<%:No files were selected%>',
+        folder_not_supported: '<%:Folder upload is not supported%>',
+        insufficient_space: '<%:Not enough free space%>',
+        space_less_than_50mb: '<%:Available space is less than 5% of the current partition, operation is not allowed%>',
+        blocked_conflict: '<%:A directory or special file already uses this name%>',
+        select_upload_target: '<%:Drop files on a writable directory%>',
+        new_folder: '<%:New folder%>',
+        new_file: '<%:New file%>',
+        folder_name: '<%:Folder name%>',
+        file_name: '<%:File name%>',
+        rename: '<%:Rename%>',
+        new_name: '<%:New name%>',
+        create: '<%:Create%>',
+        save: '<%:Save%>',
+        error: '<%:Error%>',
+        warning: '<%:Warning%>',
+        success: '<%:Success%>',
+        notice: '<%:Notice%>',
+        confirm: '<%:Confirm%>',
+        upload: '<%:Upload%>',
+        auto_indent: '<%:Auto indent%>',
+        auto_indent_desc: '<%:Keep the indentation and indent the next line after an opening brace or parenthesis when editing code files.%>',
+        auto_wrap: '<%:Auto wrap%>',
+        auto_wrap_desc: '<%:Wrap long lines to fit the window in the text editor.%>',
+        restore_last_directory: '<%:Restore last directory%>',
+        restore_last_directory_desc: '<%:Reopen the last visited directory when Harbor File starts.%>',
+        undo: '<%:Undo%>',
+        redo: '<%:Redo%>',
+        line_numbers: '<%:Line numbers%>',
+        recover_unsaved: '<%:Unsaved changes from your last session were found for this file.%>',
+        recover: '<%:Recover%>',
+        discard_changes: '<%:Discard changes%>',
+        invalid_name: '<%:Enter a valid name%>',
+        folder_created: '<%:Folder created%>',
+        file_created: '<%:File created%>',
+        rename_complete: '<%:Rename complete%>',
+        delete_complete: '<%:Delete complete%>',
+        operation_failed: '<%:Operation failed%>',
+        copy_action: '<%:Copy%>',
+        cut_action: '<%:Cut%>',
+        paste: '<%:Paste%>',
+        copy_to: '<%:Copy to%>',
+        move_to: '<%:Move to%>',
+        move_item_confirm: '<%:Move this item to the selected folder?%>',
+        move_selected_confirm: '<%:Move selected items to the selected folder?%>',
+        copy_selected_confirm: '<%:Copy selected items to the selected folder?%>',
+        move_item_same: '<%:Source and destination folders cannot be the same%>',
+        copy_complete: '<%:Copy complete%>',
+        move_complete: '<%:Move complete%>',
+        compress: '<%:Compress%>',
+        target_path: '<%:Target path%>',
+        extract_overwrite_confirm: '<%:The target already exists, overwrite it?%>',
+        extract: '<%:Extract%>',
+        archive_format: '<%:Archive format%>',
+        archive_name: '<%:Archive name%>',
+        archive_operation: '<%:Archive operation%>',
+        creating_archive: '<%:Creating archive%>',
+        extracting_archive: '<%:Extracting archive%>',
+        archive_created: '<%:Archive created successfully%>',
+        archive_extracted: '<%:Archive extracted successfully%>',
+        archive_failed: '<%:Archive operation failed%>',
+        archive_overwrite_confirm: '<%:The target archive already exists, overwrite it?%>',
+        archive_busy: '<%:Another archive task is already running%>',
+        archive_task_not_found: '<%:Archive task not found%>',
+        archive_command_missing: '<%:Archive command not found%>',
+        archive_missing_tool_install: '<%:Missing %s tool, please install it from Software Center first%>',
+        archive_tool_required: '<%:%s is not installed%>',
+        install_tool: '<%:Install %s%>',
+        unsupported_archive: '<%:Unsupported archive format%>',
+        archive_same_directory_required: '<%:Archive sources must be in the same directory%>',
+        archive_single_file_only: '<%:This archive format only supports one regular file%>',
+        preparing_archive: '<%:Preparing archive%>',
+        multiple_items: '<%:Multiple items%>',
+        selected_items: '<%:Selected %d items%>',
+        delete_item_confirm: '<%:Are you sure you want to permanently delete this item?%>',
+        delete_selected_items: '<%:Delete selected items?%>',
+        batch_stopped_at: '<%:Batch operation stopped at: %s%>',
+        some_items_cannot_modify: '<%:Some items cannot be modified%>',
+        copied_to_clipboard: '<%:Copied to clipboard%>',
+        cut_to_clipboard: '<%:Cut to clipboard%>',
+        clipboard_empty: '<%:Clipboard is empty%>',
+        paste_complete: '<%:Paste complete%>',
+        select_destination: '<%:Select destination folder%>',
+        settings: '<%:Settings%>',
+        default_view: '<%:Default view%>',
+        home_dir: '<%:Home directory%>',
+        home_dir_desc: '<%:Common folders are created under this directory and shown in Quick access.%>',
+        system_folder_operations: '<%:System folder operations%>',
+        show_hidden_files: '<%:Show hidden files%>',
+        thumbnails: '<%:Thumbnails%>',
+        thumbnails_desc: '<%:Show cached image thumbnails in icon and tile views. Thumbnails only support image folders. After enabling this option, you can generate thumbnails in image folders.%>',
+        generate_thumbnails: '<%:Generate thumbnails%>',
+        generating_thumbnails: '<%:Generating thumbnails%>',
+        thumbnail_success: '<%:Thumbnail generation complete%>',
+        thumbnail_failed: '<%:Thumbnail generation failed%>',
+        thumbnail_busy: '<%:Another thumbnail generation task is already running%>',
+        thumbnail_command_missing: '<%:GraphicsMagick command not found%>',
+        thumbnail_tool_required: '<%:GraphicsMagick is required to generate thumbnails%>',
+        install_graphicsmagick: '<%:Install GraphicsMagick%>',
+        graphicsmagick_installed: '<%:GraphicsMagick is already installed%>',
+        thumbnail_task_not_found: '<%:Thumbnail task not found%>',
+        preparing_thumbnails: '<%:Preparing thumbnails%>',
+        current_file: '<%:Current file%>',
+        progress: '<%:Progress%>',
+        generated: '<%:Generated%>',
+        cached: '<%:Cached%>',
+        failed: '<%:Failed%>',
+        invalid_path: '<%:Enter a valid absolute path%>',
+        disabled: '<%:Disabled%>',
+        enabled: '<%:Enabled%>',
+        settings_saved: '<%:Settings saved%>',
+        checking: '<%:Checking%>',
+        installed: '<%:Installed%>',
+        not_installed: '<%:Not installed%>',
+        unlimited: '<%:Unlimited%>',
+        nginx_configuration: '<%:Nginx configuration%>',
+        nginx_settings_saved: '<%:Nginx configuration saved%>',
+        installing_nginx: '<%:Installing Nginx, please wait.%>',
+        nginx_restart_countdown: '<%:Installing, please wait, %d seconds remaining.%>',
+        nginx_install_failed: '<%:Nginx installation failed%>',
+        web_server_settings_saved: '<%:Web service configuration saved%>',
+        system_folder_blocked: '<%:System folder operations are disabled%>',
+        uploaded: '<%:Uploaded%>',
+        buffered: '<%:Buffered%>',
+        buffering: '<%:Buffering%>',
+        of: '<%:of%>',
+        installer: '<%:Installer%>',
+        install: '<%:Install%>',
+        install_package: '<%:Install package%>',
+        install_package_now: '<%:Install this package now?%>',
+        installing_package: '<%:Installing package%>',
+        install_success: '<%:Package installed successfully%>',
+        install_success_with_warnings: '<%:Package installed with warnings%>',
+        install_failed: '<%:Package installation failed%>',
+        install_running: '<%:Installing package%>',
+        install_busy: '<%:Another package installation is already running%>',
+        command_not_found: '<%:Installer command not found%>',
+        no_log_yet: '<%:No log yet%>',
+        ipk_package: '<%:IPK Package%>',
+        apk_package: '<%:APK Package%>',
+        system_package: '<%:System package%>',
+        package_task_not_found: '<%:Package install task not found%>',
+        preparing_install: '<%:Preparing package install%>',
+        checking_package_index: '<%:Checking package index%>',
+        updating_package_index: '<%:Updating package index%>',
+        package_index_update_failed: '<%:Package index update failed%>',
+        install_unexpected_end: '<%:Install task ended unexpectedly%>',
+        exit_code: '<%:Exit code%>',
+        terminal: '<%:Terminal%>',
+        connecting_terminal: '<%:Connecting to terminal%>',
+        terminal_failed: '<%:Terminal connection failed%>',
+        terminal_failed_hint: '<%:Connection failed, please check whether the ttyd service is running and the port is correct%>',
+        terminal_https_hint: '<%:This LuCI page is served over HTTPS, so the terminal must also use HTTPS. Enable SSL in the ttyd configuration, or open the terminal in a new window over HTTP%>',
+        terminal_https_cert_hint: '<%:The terminal uses a certificate the browser cannot verify (for example a self-signed certificate), so it is blocked inside this window. Open the terminal in a new window and accept the certificate, or install a trusted certificate for ttyd%>',
+        terminal_current_path: '<%:Current path%>',
+        terminal_service_url: '<%:Service address%>',
+        terminal_service_missing: '<%:The ttyd service is not installed or not configured%>',
+        install_terminal_tool: '<%:Install terminal plugin%>',
+        open_terminal_external: '<%:Open terminal in a new window%>',
+        web_service: '<%:Web service%>',
+        file_conflict: '<%:File conflict%>',
+        overwrite: '<%:Overwrite%>', 
+        rename: '<%:Rename%>',
+        skip: '<%:Skip%>',
+        files: '<%:Files%>',
+        already_exist: '<%:already exist%>',
+        please_select_operation: '<%:Please select an operation%>',
+        open_windows: '<%:Open windows%>',
+        close: '<%:Close%>',
+        close_window: '<%:Close%>',
+        minimize_window: '<%:Minimize%>',
+        maximize_window: '<%:Maximize%>',
+        restore_window: '<%:Restore%>',
+        window_title: '<%:Window%>',
+        image_title: '<%:Image%>',
+        pdf_title: '<%:PDF%>',
+        video_title: '<%:Video%>',
+        ascii_label: '<%:ASCII%>',
+        nginx_name: '<%:Nginx%>',
+        saving: '<%:Saving…%>',
+        saving_progress: '<%:Saving %>',
+        unsaved: '<%:Unsaved%>',
+        read_only: '<%:Read only%>',
+        saved: '<%:Saved%>',
+        search: '<%:Search%>',
+        search_text: '<%:Search text%>',
+        match_case: '<%:Match case%>',
+        replace_with: '<%:Replace with%>',
+        replace_all: '<%:Replace all%>',
+        regular_expression: '<%:Regular expression%>',
+        replace: '<%:Replace%>',
+        reading_full_file: '<%:Reading full file…%>',
+        hex_search_placeholder: '<%:Enter hex bytes, e.g. DE AD BE EF%>',
+        hex_replace_placeholder: '<%:Replace hex value%>',
+        hex_replace_length_mismatch: '<%:Hex replacement must match the match length%>',
+        invalid_permissions: '<%:Invalid permissions%>',
+        permissions_updated: '<%:Permissions updated%>',
+        update_failed: '<%:Update failed%>',
+        enter_absolute_path: '<%:Please enter an absolute path starting with /%>'
+    },
+    resource: '<%=resource%>/harbor_file/'
+});
+/* Minimal i18n helper for the external .js files: the browser JS cannot use
+ * LuCI's template translator, so HF.tr() looks up the label dictionary
+ * injected above and falls back to the English msgid.
+ * NOTE: we must NOT shadow the global _() — LuCI 24.10 renders the top menu
+ * client-side through its own _(), and overriding it breaks the menu language. */
+window.HarborFile.tr = function (msgid) {
+    var labels = (window.HarborFile && window.HarborFile.labels) || {};
+
+    /* 1. Prefer LuCI's own global gettext: it reads the compiled .lmo and
+     *    returns the translated string for our harbour_file domain. */
+    if (typeof window._ === 'function' && window._ !== window.HarborFile.tr) {
+        var translated = window._(msgid);
+        if (translated && translated !== msgid) {
+            return translated;
+        }
+    }
+
+    /* 2. Fallback: the server-rendered labels dictionary. Its keys are
+     *    snake_case identifiers, so derive the key from the msgid. */
+    if (labels[msgid] !== undefined && labels[msgid] !== null && labels[msgid] !== '') {
+        return labels[msgid];
+    }
+    var snake = String(msgid).toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    if (labels[snake] !== undefined && labels[snake] !== null && labels[snake] !== '') {
+        return labels[snake];
+    }
+
+    /* 3. Explicit aliases for irregular label keys. */
+    var alias = {
+        'ASCII': 'ascii_label',
+        'Image': 'image_title',
+        'PDF': 'pdf_title',
+        'Video': 'video_title',
+        'Nginx': 'nginx_name',
+        'Saving ': 'saving_progress',
+        'Enter hex bytes, e.g. DE AD BE EF': 'hex_search_placeholder',
+        'Replace hex value': 'hex_replace_placeholder',
+        'Hex replacement must match the match length': 'hex_replace_length_mismatch',
+        'Please enter an absolute path starting with /': 'enter_absolute_path'
+    };
+    if (alias[msgid] !== undefined && labels[alias[msgid]] !== undefined && labels[alias[msgid]] !== null && labels[alias[msgid]] !== '') {
+        return labels[alias[msgid]];
+    }
+
+    return msgid;
+};
+</script>
+
+<script src="<%=resource%>/harbor_file/js/util.js"></script>
+<script src="<%=resource%>/harbor_file/js/recovery.js"></script>
+<script src="<%=resource%>/harbor_file/js/window-manager.js"></script>
+<script src="<%=resource%>/harbor_file/js/document-windows.js"></script>
+<script src="<%=resource%>/harbor_file/js/system-windows.js"></script>
+<script src="<%=resource%>/harbor_file/js/file-operations.js"></script>
+
+<div class="file-manager">
+    <div class="fm-toolbar">
+        <button id="fm_back" class="fm-tool-button" type="button" title="<%:Back%>" aria-label="<%:Back%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/back.svg')" aria-hidden="true"></span>
+        </button>
+        <button id="fm_forward" class="fm-tool-button" type="button" title="<%:Forward%>" aria-label="<%:Forward%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/forward.svg')" aria-hidden="true"></span>
+        </button>
+        <button id="fm_up" class="fm-tool-button" type="button" title="<%:Up%>" aria-label="<%:Up%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/up.svg')" aria-hidden="true"></span>
+        </button>
+        <button id="fm_refresh" class="fm-tool-button" type="button" title="<%:Refresh%>" aria-label="<%:Refresh%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/refresh.svg')" aria-hidden="true"></span>
+        </button>
+        <button id="fm_view" class="fm-tool-button" type="button" title="<%:View%>" aria-label="<%:View%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/view.svg')" aria-hidden="true"></span>
+        </button>
+        <button id="fm_settings" class="fm-tool-button" type="button" title="<%:Settings%>" aria-label="<%:Settings%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/settings.svg')" aria-hidden="true"></span>
+        </button>
+        <button id="fm_about" class="fm-tool-button" type="button" title="<%:About%>" aria-label="<%:About%>">
+            <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/about.svg')" aria-hidden="true"></span>
+        </button>
+        <div id="fm_address" class="fm-address"></div>
+    </div>
+
+    <div class="fm-layout">
+        <aside id="fm_sidebar" class="fm-sidebar"></aside>
+        <main class="fm-main">
+            <div id="fm_status" class="fm-status"></div>
+            <div id="fm_upload_panel" class="fm-upload-panel">
+                <div class="fm-upload-heading">
+                    <img src="<%=resource%>/harbor_file/icons/upload.svg" alt="">
+                    <div id="fm_upload_title" class="fm-upload-title">-</div>
+                    <div id="fm_upload_percent" class="fm-upload-percent">0%</div>
+                </div>
+                <div class="fm-upload-progress"><span id="fm_upload_progress"></span></div>
+                <div id="fm_upload_detail" class="fm-upload-detail">-</div>
+                <div id="fm_upload_bytes" class="fm-upload-bytes">-</div>
+                <div id="fm_upload_speed" class="fm-upload-speed">-</div>
+            </div>
+            <div id="fm_drag_overlay" class="fm-drag-overlay"></div>
+            <div id="fm_content" class="fm-content"></div>
+            <div class="fm-details">
+                <div class="fm-detail"><div class="fm-detail-label"><%:Name%></div><div id="fm_detail_name" class="fm-detail-value">-</div></div>
+                <div class="fm-detail"><div class="fm-detail-label"><%:Path%></div><div id="fm_detail_path" class="fm-detail-value">-</div></div>
+                <div class="fm-detail"><div class="fm-detail-label"><%:Type%></div><div id="fm_detail_type" class="fm-detail-value">-</div></div>
+                <div class="fm-detail"><div class="fm-detail-label"><%:Size%></div><div id="fm_detail_size" class="fm-detail-value">-</div></div>
+                <div class="fm-detail"><div class="fm-detail-label"><%:Permissions%></div><div id="fm_detail_mode" class="fm-detail-value">-</div></div>
+                <div class="fm-detail"><div class="fm-detail-label"><%:Modified%></div><div id="fm_detail_mtime" class="fm-detail-value">-</div></div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<input id="fm_upload_input" type="file" multiple hidden style="display:none">
+
+<div id="fm_item_menu" class="fm-context-menu">
+    <button id="fm_menu_open" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/open.svg')" aria-hidden="true"></span>
+        <span><%:Open%></span>
+    </button>
+    <button id="fm_menu_open_binary" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/binary.svg')" aria-hidden="true"></span>
+        <span><%:Open hexadecimal%></span>
+    </button>
+    <button id="fm_menu_properties" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/properties.svg')" aria-hidden="true"></span>
+        <span><%:Properties%></span>
+    </button>
+    <button id="fm_menu_terminal" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/terminal.svg')" aria-hidden="true"></span>
+        <span><%:Terminal%></span>
+    </button>
+    <button id="fm_menu_download" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/download.svg')" aria-hidden="true"></span>
+        <span><%:Download file%></span>
+    </button>
+    <button id="fm_menu_compress" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/archive.svg')" aria-hidden="true"></span>
+        <span><%:Compress%></span>
+    </button>
+    <button id="fm_menu_extract" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/open.svg')" aria-hidden="true"></span>
+        <span><%:Extract%></span>
+    </button>
+    <button id="fm_menu_copy" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/copy.svg')" aria-hidden="true"></span>
+        <span><%:Copy%></span>
+    </button>
+    <button id="fm_menu_cut" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/cut.svg')" aria-hidden="true"></span>
+        <span><%:Cut%></span>
+    </button>
+    <button id="fm_menu_paste" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/paste.svg')" aria-hidden="true"></span>
+        <span><%:Paste%></span>
+    </button>
+    <button id="fm_menu_upload" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/upload.svg')" aria-hidden="true"></span>
+        <span><%:Upload files%></span>
+    </button>
+    <button id="fm_menu_rename" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/rename.svg')" aria-hidden="true"></span>
+        <span><%:Rename%></span>
+    </button>
+    <button id="fm_menu_copy_to" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/copy.svg')" aria-hidden="true"></span>
+        <span><%:Copy to%></span>
+    </button>
+    <button id="fm_menu_move_to" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/move.svg')" aria-hidden="true"></span>
+        <span><%:Move to%></span>
+    </button>
+    <button id="fm_menu_delete" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/delete.svg')" aria-hidden="true"></span>
+        <span><%:Delete%></span>
+    </button>
+</div>
+
+<div id="fm_view_menu" class="fm-context-menu">
+    <button type="button" data-view="large"><span><%:Large icons%></span></button>
+    <button type="button" data-view="medium"><span><%:Medium icons%></span></button>
+    <button type="button" data-view="small"><span><%:Small icons%></span></button>
+    <button type="button" data-view="list"><span><%:List%></span></button>
+    <button type="button" data-view="details"><span><%:Details%></span></button>
+    <button type="button" data-view="tile"><span><%:Tiles%></span></button>
+</div>
+
+<div id="fm_blank_menu" class="fm-context-menu">
+    <button id="fm_menu_sort" class="has-submenu" type="button">
+        <span class="fm-menu-image placeholder" aria-hidden="true"></span>
+        <span><%:Sort by%></span>
+    </button>
+    <button id="fm_menu_new_folder" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/new_folder.svg')" aria-hidden="true"></span>
+        <span><%:New folder%></span>
+    </button>
+    <button id="fm_menu_new_file" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/new_file.svg')" aria-hidden="true"></span>
+        <span><%:New file%></span>
+    </button>
+    <button id="fm_menu_paste_here" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/paste.svg')" aria-hidden="true"></span>
+        <span><%:Paste%></span>
+    </button>
+    <button id="fm_menu_upload_here" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/upload.svg')" aria-hidden="true"></span>
+        <span><%:Upload files%></span>
+    </button>
+    <button id="fm_menu_terminal_here" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/terminal.svg')" aria-hidden="true"></span>
+        <span><%:Terminal%></span>
+    </button>
+    <button id="fm_menu_refresh" type="button">
+        <span class="fm-menu-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/refresh.svg')" aria-hidden="true"></span>
+        <span><%:Refresh%></span>
+    </button>
+</div>
+
+<div id="fm_sort_menu" class="fm-context-menu">
+    <button type="button" data-sort-field="name"><span><%:Name%></span></button>
+    <button type="button" data-sort-field="mtime"><span><%:Modified%></span></button>
+    <button type="button" data-sort-field="type"><span><%:Type%></span></button>
+    <button type="button" data-sort-field="size"><span><%:Size%></span></button>
+    <div class="fm-context-menu-separator" role="separator"></div>
+    <button type="button" data-sort-order="asc"><span><%:Ascending%></span></button>
+    <button type="button" data-sort-order="desc"><span><%:Descending%></span></button>
+</div>
+
+<div id="fm_modal_mask" class="fm-modal-mask"></div>
+
+<section id="fm_property_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_property_title">
+    <div class="fm-dialog-header">
+        <div id="fm_property_title" class="fm-dialog-title"><%:Properties%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-property-body">
+        <img id="fm_property_icon" class="fm-property-icon" alt="">
+        <div class="fm-property-list">
+            <div class="fm-property-label"><%:Name%></div><div id="fm_property_name" class="fm-property-value">-</div>
+            <div class="fm-property-label"><%:Path%></div><div id="fm_property_path" class="fm-property-value">-</div>
+            <div class="fm-property-label"><%:Type%></div><div id="fm_property_type" class="fm-property-value">-</div>
+            <div class="fm-property-label"><%:Size%></div><div id="fm_property_size" class="fm-property-value">-</div>
+            <div class="fm-property-label"><%:Permissions%></div><div id="fm_property_mode" class="fm-property-value fm-flex-row">
+                <span id="fm_property_mode_text">-</span>
+                <button id="fm_property_edit_mode" class="fm-dialog-action" type="button"><%:Edit%></button>
+            </div>
+            <div id="fm_property_mode_edit" style="display:none;">
+                <div class="fm-property-label"></div>
+                <div class="fm-property-value perm-header">
+                    <span>R</span>
+                    <span>W</span>
+                    <span>X</span>
+                </div>
+                <div class="fm-property-label"><%:Owner%></div><div class="fm-property-value perm-checks">
+                    <input type="checkbox" class="perm-check">
+                    <input type="checkbox" class="perm-check">
+                    <input type="checkbox" class="perm-check">
+                </div>
+                <div class="fm-property-label"><%:Group%></div><div class="fm-property-value perm-checks">
+                    <input type="checkbox" class="perm-check">
+                    <input type="checkbox" class="perm-check">
+                    <input type="checkbox" class="perm-check">
+                </div>
+                <div class="fm-property-label"><%:Others%></div><div class="fm-property-value perm-checks">
+                    <input type="checkbox" class="perm-check">
+                    <input type="checkbox" class="perm-check">
+                    <input type="checkbox" class="perm-check">
+                </div>
+                <div class="fm-property-label"><%:Octal%></div><div class="fm-property-value fm-flex-row">
+                    <input id="fm_property_mode_input" type="text" size="4" maxlength="4" pattern="[0-7]{3,4}" style="width:50px;">
+                    <button id="fm_property_mode_save" class="fm-dialog-action primary" type="button"><%:Save%></button>
+                    <button id="fm_property_mode_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+                </div>
+            </div>
+            <div class="fm-property-label"><%:Modified%></div><div id="fm_property_mtime" class="fm-property-value">-</div>
+        </div>
+    </div>
+</section>
+
+<section id="fm_about_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_about_title">
+    <div class="fm-dialog-header">
+        <div id="fm_about_title" class="fm-dialog-title"><%:About%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-about-body">
+        <div class="fm-about-brand">
+            <div class="fm-about-icon" aria-hidden="true">
+                <span class="fm-tool-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/about.svg')"></span>
+            </div>
+            <div>
+                <div class="fm-about-name">Harbor File</div>
+                <div class="fm-about-subtitle"><%:Harbor File is a powerful OpenWrt file management plugin%></div>
+            </div>
+        </div>
+        <div class="fm-about-list">
+            <div class="fm-about-label"><%:Author%></div>
+            <div class="fm-about-value">TT</div>
+            <div class="fm-about-label"><%:Code refactoring%></div>
+            <div class="fm-about-value"><a href="https://github.com/whzhni1/luci-app-harbor-file/tree/code-refactoring" target="_blank" rel="noopener">whzhni1</a></div>
+            <div class="fm-about-label"><%:Project address%></div>
+            <div class="fm-about-value"><a href="https://github.com/destan19/luci-app-harbor-file" target="_blank" rel="noopener">github.com/destan19/luci-app-harbor-file</a></div>
+            <div class="fm-about-label"><%:Website%></div>
+            <div class="fm-about-value"><a href="https://www.fanchmwrt.com" target="_blank" rel="noopener">www.fanchmwrt.com</a></div>
+        </div>
+        <div class="fm-about-copyright">
+            Copyright &copy; 2026 FanchmWrt. <%:All rights reserved.%>
+        </div>
+    </div>
+</section>
+
+<section id="fm_settings_dialog" class="fm-dialog fm-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_settings_title">
+    <div class="fm-dialog-header">
+        <div id="fm_settings_title" class="fm-dialog-title"><%:Settings%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-settings-body">
+        <div class="fm-settings-shell">
+            <div class="fm-settings-menu" role="tablist" aria-label="<%:Settings categories%>">
+                <button id="fm_settings_tab_basic" class="fm-settings-menu-item active" type="button" role="tab" aria-selected="true" aria-controls="fm_settings_panel_basic" data-settings-tab="basic"><%:Basic settings%></button>
+                <button id="fm_settings_tab_nginx" class="fm-settings-menu-item" type="button" role="tab" aria-selected="false" aria-controls="fm_settings_panel_nginx" data-settings-tab="nginx"><%:Web service%></button>
+            </div>
+            <div class="fm-settings-content">
+                <div id="fm_settings_panel_basic" class="fm-settings-panel active" role="tabpanel" aria-labelledby="fm_settings_tab_basic">
+                    <div class="fm-settings-panel-main">
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Default view%></span>
+                                <div class="fm-settings-desc"><%:Choose how files and folders are shown when Harbor File opens.%></div>
+                            </div>
+                            <div class="fm-settings-control-wrap">
+                                <select id="fm_settings_view_mode" class="fm-settings-control">
+                                    <option value="0"><%:Large icons%></option>
+                                    <option value="1"><%:Medium icons%></option>
+                                    <option value="2"><%:Small icons%></option>
+                                    <option value="3"><%:List%></option>
+                                    <option value="4"><%:Details%></option>
+                                    <option value="5"><%:Tiles%></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Home directory%></span>
+                                <div class="fm-settings-desc"><%:Common folders are created under this directory and shown in Quick access.%></div>
+                            </div>
+                            <div class="fm-settings-control-wrap">
+                                <input id="fm_settings_home_dir" class="fm-settings-control fm-settings-path-control" type="text" placeholder="/tmp/root">
+                            </div>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:System folder operations%></span>
+                                <div class="fm-settings-desc"><%:Allow create, rename, move, upload and delete actions in protected system folders.%></div>
+                            </div>
+                            <label class="fm-settings-switch" for="fm_settings_system_operations">
+                                <input id="fm_settings_system_operations" type="checkbox">
+                                <span class="fm-settings-switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Show hidden files%></span>
+                                <div class="fm-settings-desc"><%:Show Linux hidden files and folders whose names start with a dot.%></div>
+                            </div>
+                            <label class="fm-settings-switch" for="fm_settings_show_hidden">
+                                <input id="fm_settings_show_hidden" type="checkbox">
+                                <span class="fm-settings-switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Thumbnails%></span>
+                                <div class="fm-settings-desc"><%:Show cached image thumbnails in icon and tile views. Thumbnails only support image folders. After enabling this option, you can generate thumbnails in image folders.%></div>
+                            </div>
+                            <label class="fm-settings-switch" for="fm_settings_thumbnails">
+                                <input id="fm_settings_thumbnails" type="checkbox">
+                                <span class="fm-settings-switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Auto indent%></span>
+                                <div class="fm-settings-desc"><%:Keep the indentation and indent the next line after an opening brace or parenthesis when editing code files.%></div>
+                            </div>
+                            <label class="fm-settings-switch" for="fm_settings_auto_indent">
+                                <input id="fm_settings_auto_indent" type="checkbox">
+                                <span class="fm-settings-switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Auto wrap%></span>
+                                <div class="fm-settings-desc"><%:Wrap long lines to fit the window in the text editor.%></div>
+                            </div>
+                            <label class="fm-settings-switch" for="fm_settings_auto_wrap">
+                                <input id="fm_settings_auto_wrap" type="checkbox">
+                                <span class="fm-settings-switch-slider"></span>
+                            </label>
+                        </div>
+                        <div class="fm-settings-row">
+                            <div class="fm-settings-copy">
+                                <span class="fm-settings-label"><%:Restore last directory%></span>
+                                <div class="fm-settings-desc"><%:Reopen the last visited directory when Harbor File starts.%></div>
+                            </div>
+                            <label class="fm-settings-switch" for="fm_settings_restore_last_directory">
+                                <input id="fm_settings_restore_last_directory" type="checkbox">
+                                <span class="fm-settings-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="fm-settings-page-actions">
+                        <button id="fm_settings_basic_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+                        <button id="fm_settings_basic_save" class="fm-dialog-action primary" type="button"><%:Save%></button>
+                    </div>
+                </div>
+                <div id="fm_settings_panel_nginx" class="fm-settings-panel" role="tabpanel" aria-labelledby="fm_settings_tab_nginx">
+                    <div class="fm-settings-panel-main">
+                        <div class="fm-settings-intro">
+                            <div class="fm-settings-intro-title">
+                                <strong id="fm_web_server_title">Nginx</strong>
+                                <div class="fm-nginx-actions">
+                                    <span id="fm_nginx_status" class="fm-nginx-status checking"><%:Checking%></span>
+                                    <button id="fm_nginx_install" class="fm-nginx-command primary" type="button" style="display:none"><%:Install%></button>
+                                </div>
+                            </div>
+                            <div class="fm-settings-intro-desc"><%:A high-performance web server that improves video playback and file operation performance.%></div>
+                            <div id="fm_nginx_fcm_note" class="fm-settings-fcm-note"><%:This system is FanchmWrt. The default web server has already been optimized for basic file management and video playback, so switching to Nginx is not required.%></div>
+                        </div>
+                        <div id="fm_nginx_options">
+                            <div class="fm-settings-recommend">
+                                <button id="fm_nginx_recommend" class="fm-nginx-command primary" type="button"><%:Use recommended configuration%></button>
+                                <div class="fm-settings-recommend-desc"><%:Default configuration may keep upload and download limits. Recommended configuration can remove some limits.%></div>
+                            </div>
+                            <div class="fm-settings-field-group-title"><%:Nginx parameters%></div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label"><%:Client request body size%></span>
+                                    <div class="fm-settings-desc"><%:Set client_max_body_size in megabytes. Enter 0 for unlimited.%></div>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <div class="fm-settings-input-group">
+                                        <input id="fm_settings_client_max_body_size" class="fm-settings-control fm-settings-number-control" type="number" min="0" max="1024" step="1">
+                                        <span id="fm_client_max_body_size_unit" class="fm-settings-unit">M</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label"><%:File upload buffering%></span>
+                                    <div class="fm-settings-desc"><%:When enabled, uploaded files are buffered before being written to disk.%></div>
+                                </div>
+                                <label class="fm-settings-switch" for="fm_settings_uwsgi_request_buffering">
+                                    <input id="fm_settings_uwsgi_request_buffering" type="checkbox">
+                                    <span class="fm-settings-switch-slider"></span>
+                                </label>
+                            </div>
+                            <div class="fm-settings-field-group-title"><%:uWSGI parameters%></div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label">reload-on-as</span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <div class="fm-settings-control-line">
+                                        <label class="fm-settings-switch" for="fm_settings_reload_on_as_enabled">
+                                            <input id="fm_settings_reload_on_as_enabled" type="checkbox">
+                                            <span class="fm-settings-switch-slider"></span>
+                                        </label>
+                                        <input id="fm_settings_reload_on_as" class="fm-settings-control fm-settings-number-control" type="number" step="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label">reload-on-rss</span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <div class="fm-settings-control-line">
+                                        <label class="fm-settings-switch" for="fm_settings_reload_on_rss_enabled">
+                                            <input id="fm_settings_reload_on_rss_enabled" type="checkbox">
+                                            <span class="fm-settings-switch-slider"></span>
+                                        </label>
+                                        <input id="fm_settings_reload_on_rss" class="fm-settings-control fm-settings-number-control" type="number" step="1">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label">post-buffering</span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <input id="fm_settings_post_buffering" class="fm-settings-control fm-settings-number-control" type="number" step="1">
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label">limit-as</span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <input id="fm_settings_limit_as" class="fm-settings-control fm-settings-number-control" type="number" step="1">
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label">reload-mercy</span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <input id="fm_settings_reload_mercy" class="fm-settings-control fm-settings-number-control" type="number" step="1">
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label">buffer-size</span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <input id="fm_settings_buffer_size" class="fm-settings-control fm-settings-number-control" type="number" step="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="fm_uhttpd_options" style="display:none">
+                            <div class="fm-settings-intro">
+                                <div class="fm-settings-intro-title">
+                                    <strong>uhttpd</strong>
+                                </div>
+                                <div class="fm-settings-intro-desc"><%:If large file uploads fail, increase the timeout values.%></div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label"><%:Script timeout%></span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <div class="fm-settings-input-group">
+                                        <input id="fm_settings_uhttpd_script_timeout" class="fm-settings-control fm-settings-number-control" type="number" min="0" step="1">
+                                        <span class="fm-settings-unit"><%:Seconds%></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="fm-settings-row">
+                                <div class="fm-settings-copy">
+                                    <span class="fm-settings-label"><%:Network timeout%></span>
+                                </div>
+                                <div class="fm-settings-control-wrap">
+                                    <div class="fm-settings-input-group">
+                                        <input id="fm_settings_uhttpd_network_timeout" class="fm-settings-control fm-settings-number-control" type="number" min="0" step="1">
+                                        <span class="fm-settings-unit"><%:Seconds%></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="fm_nginx_page_actions" class="fm-settings-page-actions">
+                        <button id="fm_settings_nginx_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+                        <button id="fm_settings_nginx_save" class="fm-dialog-action primary" type="button"><%:Save%></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="fm_nginx_confirm_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_nginx_confirm_title">
+    <div class="fm-dialog-header">
+        <div id="fm_nginx_confirm_title" class="fm-dialog-title"><%:Install Nginx%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-nginx-install-body">
+        <p class="fm-nginx-install-copy"><%:Install Nginx now?%></p>
+        <p class="fm-nginx-install-warning"><%:Installing Nginx will replace the current web server. After installation, the web service will restart and you must access the management interface through HTTPS.%></p>
+        <div class="fm-dialog-actions">
+            <button id="fm_nginx_confirm_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_nginx_confirm_start" class="fm-dialog-action primary" type="button"><%:Install%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_nginx_install_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_nginx_install_title">
+    <div class="fm-dialog-header">
+        <div id="fm_nginx_install_title" class="fm-dialog-title"><%:Installing Nginx%></div>
+    </div>
+    <div class="fm-nginx-install-body">
+        <div class="fm-nginx-progress">
+            <div id="fm_nginx_spinner" class="fm-nginx-spinner" aria-hidden="true"></div>
+            <div id="fm_nginx_install_text" class="fm-nginx-progress-text"><%:Installing Nginx, please wait.%></div>
+        </div>
+        <div id="fm_nginx_install_hint" class="fm-nginx-progress-hint"><%:The web interface may be interrupted during installation. After installation, the login page will be reopened. If it cannot be accessed, please try again later.%></div>
+        <div id="fm_nginx_install_actions" class="fm-dialog-actions" style="display:none">
+            <button id="fm_nginx_install_done" class="fm-dialog-action primary" type="button"><%:Close%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_overwrite_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_overwrite_title">
+    <div class="fm-dialog-header">
+        <div id="fm_overwrite_title" class="fm-dialog-title"><%:Replace existing files%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-overwrite-body">
+        <p class="fm-overwrite-copy"><%:The following files already exist. Replace them with the uploaded files?%></p>
+        <ul id="fm_conflict_list" class="fm-conflict-list"></ul>
+        <div class="fm-dialog-actions">
+            <button id="fm_overwrite_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_overwrite_confirm" class="fm-dialog-action primary" type="button"><%:Replace%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_name_dialog" class="fm-dialog fm-name-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_name_title">
+    <div class="fm-dialog-header">
+        <div id="fm_name_title" class="fm-dialog-title"><%:New folder%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-form-body">
+        <label id="fm_name_label" class="fm-form-label" for="fm_name_input"><%:Folder name%></label>
+        <input id="fm_name_input" class="fm-form-input" type="text" maxlength="255" autocomplete="off">
+        <div class="fm-dialog-actions">
+            <button id="fm_name_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_name_confirm" class="fm-dialog-action primary" type="button"><%:Create%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_delete_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_delete_title">
+    <div class="fm-dialog-header">
+        <div id="fm_delete_title" class="fm-dialog-title"><%:Confirm delete%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-form-body">
+        <p class="fm-delete-copy"><%:Are you sure you want to permanently delete this item?%><strong id="fm_delete_name" class="fm-delete-name"></strong></p>
+        <div class="fm-dialog-actions">
+            <button id="fm_delete_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_delete_confirm" class="fm-dialog-action danger" type="button"><%:Delete%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_target_dialog" class="fm-dialog fm-target-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_target_title">
+    <div class="fm-dialog-header">
+        <div id="fm_target_title" class="fm-dialog-title"><%:Select destination folder%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-target-body">
+        <div id="fm_target_source" class="fm-target-source">-</div>
+        <div class="fm-target-toolbar">
+            <button id="fm_target_up" class="fm-target-up" type="button" aria-label="<%:Up%>"><span class="fm-target-image" style="--fm-icon:url('<%=resource%>/harbor_file/icons/up.svg')" aria-hidden="true"></span></button>
+            <div id="fm_target_path" class="fm-target-path">/</div>
+        </div>
+        <div id="fm_target_list" class="fm-target-list"></div>
+        <div class="fm-dialog-actions">
+            <button id="fm_target_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_target_confirm" class="fm-dialog-action primary" type="button"><%:Confirm%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_archive_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_archive_title">
+    <div class="fm-dialog-header">
+        <div id="fm_archive_title" class="fm-dialog-title"><%:Compress%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-form-body">
+        <div id="fm_archive_source" class="fm-form-help">-</div>
+        <label class="fm-form-label" for="fm_archive_format"><%:Archive format%></label>
+        <select id="fm_archive_format" class="fm-form-select">
+            <option value="tar.gz">tar.gz</option>
+            <option value="tar">tar</option>
+            <option value="zip">zip</option>
+        </select>
+        <label class="fm-form-label" for="fm_archive_name"><%:Archive name%></label>
+        <input id="fm_archive_name" class="fm-form-input" type="text" maxlength="255" autocomplete="off">
+        <label class="fm-form-label" for="fm_archive_target"><%:Target path%></label>
+        <input id="fm_archive_target" class="fm-form-input" type="text" autocomplete="off">
+        <div class="fm-dialog-actions">
+            <button id="fm_archive_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_archive_start" class="fm-dialog-action primary" type="button"><%:Compress%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_extract_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_extract_title">
+    <div class="fm-dialog-header">
+        <div id="fm_extract_title" class="fm-dialog-title"><%:Extract%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-form-body">
+        <div id="fm_extract_source" class="fm-form-help">-</div>
+        <label class="fm-form-label" for="fm_extract_target"><%:Target path%></label>
+        <input id="fm_extract_target" class="fm-form-input" type="text" autocomplete="off">
+        <div class="fm-dialog-actions">
+            <button id="fm_extract_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_extract_start" class="fm-dialog-action primary" type="button"><%:Extract%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_archive_task_dialog" class="fm-dialog fm-text-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_archive_task_title">
+    <div class="fm-dialog-header">
+        <div id="fm_archive_task_title" class="fm-dialog-title"><%:Archive operation%></div>
+        <button id="fm_archive_task_close" class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-package-install-body">
+        <div id="fm_archive_task_status" class="fm-package-status">-</div>
+        <div class="fm-package-list">
+            <div class="fm-package-label"><%:Path%></div><div id="fm_archive_task_path" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Format%></div><div id="fm_archive_task_format" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Exit code%></div><div id="fm_archive_task_exit" class="fm-package-value">-</div>
+        </div>
+        <pre id="fm_archive_task_log" class="fm-package-log"><%:No log yet%></pre>
+        <div class="fm-dialog-actions">
+            <button id="fm_archive_install_tool" class="fm-dialog-action primary" type="button" style="display:none"><%:Install%></button>
+            <button id="fm_archive_task_done" class="fm-dialog-action primary" type="button"><%:Close%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_package_confirm_dialog" class="fm-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_package_confirm_title">
+    <div class="fm-dialog-header">
+        <div id="fm_package_confirm_title" class="fm-dialog-title"><%:Install package%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-package-confirm-body">
+        <p class="fm-package-copy"><%:Install this package now?%></p>
+        <div class="fm-package-list">
+            <div class="fm-package-label"><%:Name%></div><div id="fm_package_confirm_name" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Path%></div><div id="fm_package_confirm_path" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Type%></div><div id="fm_package_confirm_type" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Installer%></div><div id="fm_package_confirm_installer" class="fm-package-value">-</div>
+        </div>
+        <div class="fm-dialog-actions">
+            <button id="fm_package_confirm_cancel" class="fm-dialog-action" type="button"><%:Cancel%></button>
+            <button id="fm_package_confirm_start" class="fm-dialog-action primary" type="button"><%:Install%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_package_install_dialog" class="fm-dialog fm-text-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_package_install_title">
+    <div class="fm-dialog-header">
+        <div id="fm_package_install_title" class="fm-dialog-title"><%:Installing package%></div>
+        <button id="fm_package_install_close" class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-package-install-body">
+        <div id="fm_package_install_status" class="fm-package-status">-</div>
+        <div class="fm-package-list">
+            <div class="fm-package-label"><%:Name%></div><div id="fm_package_install_name" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Path%></div><div id="fm_package_install_path" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Type%></div><div id="fm_package_install_type" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Installer%></div><div id="fm_package_install_installer" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Exit code%></div><div id="fm_package_install_exit" class="fm-package-value">-</div>
+        </div>
+        <pre id="fm_package_install_log" class="fm-package-log"><%:No log yet%></pre>
+        <div class="fm-dialog-actions">
+            <button id="fm_package_install_done" class="fm-dialog-action primary" type="button"><%:Close%></button>
+        </div>
+    </div>
+</section>
+
+<section id="fm_thumbnail_dialog" class="fm-dialog fm-text-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_thumbnail_title">
+    <div class="fm-dialog-header">
+        <div id="fm_thumbnail_title" class="fm-dialog-title"><%:Generating thumbnails%></div>
+        <button id="fm_thumbnail_close" class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-package-install-body">
+        <div id="fm_thumbnail_status" class="fm-package-status">-</div>
+        <div class="fm-thumbnail-progress"><span id="fm_thumbnail_progress_bar"></span></div>
+        <div class="fm-package-list">
+            <div class="fm-package-label"><%:Path%></div><div id="fm_thumbnail_path" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Current file%></div><div id="fm_thumbnail_current" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Progress%></div><div id="fm_thumbnail_progress_text" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Generated%></div><div id="fm_thumbnail_success" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Cached%></div><div id="fm_thumbnail_cached" class="fm-package-value">-</div>
+            <div class="fm-package-label"><%:Failed%></div><div id="fm_thumbnail_failed" class="fm-package-value">-</div>
+        </div>
+        <pre id="fm_thumbnail_log" class="fm-package-log"><%:No log yet%></pre>
+        <div class="fm-dialog-actions">
+            <button id="fm_thumbnail_install_tool" class="fm-dialog-action primary" type="button" style="display:none"><%:Install GraphicsMagick%></button>
+            <button id="fm_thumbnail_done" class="fm-dialog-action primary" type="button"><%:Close%></button>
+        </div>
+    </div>
+</section>
+
+
+<section id="fm_terminal_dialog" class="fm-dialog fm-terminal-dialog" role="dialog" aria-modal="true" aria-labelledby="fm_terminal_title">
+    <div class="fm-dialog-header">
+        <div id="fm_terminal_title" class="fm-dialog-title"><%:Terminal%></div>
+        <button class="fm-dialog-close" type="button" aria-label="<%:Close%>">&times;</button>
+    </div>
+    <div class="fm-terminal-shell">
+        <iframe id="fm_terminal_frame" class="fm-terminal-frame" src="about:blank" title="<%:Terminal%>"></iframe>
+        <div id="fm_terminal_loading" class="fm-terminal-overlay show">
+            <div class="fm-terminal-panel">
+                <div class="fm-terminal-spinner"></div>
+                <div id="fm_terminal_loading_text" class="fm-terminal-message"><%:Connecting to terminal%></div>
+                <div id="fm_terminal_loading_hint" class="fm-terminal-subtext"></div>
+            </div>
+        </div>
+        <div id="fm_terminal_error" class="fm-terminal-overlay fm-terminal-error">
+            <div class="fm-terminal-panel">
+                <div id="fm_terminal_error_text" class="fm-terminal-message"><%:Terminal connection failed%></div>
+                <div id="fm_terminal_error_hint" class="fm-terminal-subtext"><%:Connection failed, please check whether the ttyd service is running and the port is correct%></div>
+                <button id="fm_terminal_install_tool" class="fm-dialog-action primary" type="button" style="display:none"><%:Install terminal plugin%></button>
+                <button id="fm_terminal_open_external" class="fm-dialog-action" type="button" style="display:none"><%:Open terminal in a new window%></button>
+            </div>
+        </div>
+    </div>
+</section>
+<script type="text/javascript">
+// Composition root: event bindings + boot. All logic lives in the module files above.
+(function (HF) {
+    document.getElementById('fm_back').addEventListener('click', function() {
+        if (HF.state.history_index > 0) {
+            HF.state.history_index--;
+            HF.navigate(HF.state.history[HF.state.history_index], false);
+        }
+    });
+    document.getElementById('fm_forward').addEventListener('click', function() {
+        if (HF.state.history_index < HF.state.history.length - 1) {
+            HF.state.history_index++;
+            HF.navigate(HF.state.history[HF.state.history_index], false);
+        }
+    });
+    document.getElementById('fm_up').addEventListener('click', function() {
+        if (!HF.state.current || HF.state.current.kind !== 'directory') {
+            return;
+        }
+        if (HF.state.current.path === '/') {
+            HF.show_virtual('this_pc', true);
+        } else {
+            HF.open_path(HF.state.current.parent || '/', true);
+        }
+    });
+    document.getElementById('fm_refresh').addEventListener('click', function() {
+        HF.refresh_current();
+    });
+    document.getElementById('fm_view').addEventListener('click', function(event) {
+        event.stopPropagation();
+        for (var i = 0; i < view_buttons.length; i++) {
+            view_buttons[i].classList.toggle('active', view_buttons[i].getAttribute('data-view') === HF.state.view_mode);
+        }
+        var rect = this.getBoundingClientRect();
+        HF.show_context_menu('fm_view_menu', rect.left, rect.bottom + 4);
+    });
+    document.getElementById('fm_settings').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.open_settings_dialog();
+    });
+    document.getElementById('fm_about').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.open_modal('fm_about_dialog');
+    });
+    var view_buttons = document.querySelectorAll('#fm_view_menu [data-view]');
+    for (var view_index = 0; view_index < view_buttons.length; view_index++) {
+        view_buttons[view_index].addEventListener('click', function() {
+            HF.set_view_mode(this.getAttribute('data-view'));
+        });
+    }
+    document.getElementById('fm_menu_sort').addEventListener('mouseenter', HF.show_sort_menu);
+    document.getElementById('fm_menu_sort').addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        HF.show_sort_menu();
+    });
+    document.getElementById('fm_blank_menu').addEventListener('mousemove', function(event) {
+        if (!event.target.closest('#fm_menu_sort')) {
+            document.getElementById('fm_sort_menu').style.display = 'none';
+        }
+    });
+    var sort_field_buttons = document.querySelectorAll('#fm_sort_menu [data-sort-field]');
+    for (var sort_field_index = 0; sort_field_index < sort_field_buttons.length; sort_field_index++) {
+        sort_field_buttons[sort_field_index].addEventListener('click', function(event) {
+            event.stopPropagation();
+            HF.apply_directory_sort(this.getAttribute('data-sort-field'), null);
+        });
+    }
+    var sort_order_buttons = document.querySelectorAll('#fm_sort_menu [data-sort-order]');
+    for (var sort_order_index = 0; sort_order_index < sort_order_buttons.length; sort_order_index++) {
+        sort_order_buttons[sort_order_index].addEventListener('click', function(event) {
+            event.stopPropagation();
+            HF.apply_directory_sort(null, this.getAttribute('data-sort-order'));
+        });
+    }
+    document.getElementById('fm_upload_input').addEventListener('change', function() {
+        var files = Array.prototype.slice.call(this.files || []);
+        var target = HF.state.upload_target;
+        this.value = '';
+        HF.state.upload_target = null;
+        if (target) {
+            HF.begin_upload(files, target.path, target.label);
+        }
+    });
+    document.getElementById('fm_overwrite_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_name_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_delete_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_settings_basic_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_settings_nginx_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_nginx_confirm_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_nginx_install_done').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_package_confirm_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_package_install_done').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_archive_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_archive_task_done').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_archive_install_tool').addEventListener('click', HF.start_archive_tool_install);
+    document.getElementById('fm_archive_format').addEventListener('change', HF.sync_archive_format_options);
+    document.getElementById('fm_archive_start').addEventListener('click', HF.submit_archive_dialog);
+    document.getElementById('fm_extract_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_extract_start').addEventListener('click', HF.submit_extract_dialog);
+    document.getElementById('fm_extract_target').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            HF.submit_extract_dialog();
+        }
+    });
+    document.getElementById('fm_archive_name').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            HF.submit_archive_dialog();
+        }
+    });
+    document.getElementById('fm_thumbnail_done').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_thumbnail_install_tool').addEventListener('click', HF.start_thumbnail_tool_install);
+    document.getElementById('fm_terminal_install_tool').addEventListener('click', HF.start_terminal_tool_install);
+    document.getElementById('fm_terminal_open_external').addEventListener('click', HF.open_terminal_external);
+    document.getElementById('fm_package_confirm_start').addEventListener('click', function() {
+        if (HF.state.install_item) {
+            HF.start_package_install(HF.state.install_item);
+        }
+    });
+    document.getElementById('fm_settings_basic_save').addEventListener('click', HF.save_basic_settings_dialog);
+    document.getElementById('fm_settings_nginx_save').addEventListener('click', HF.save_web_server_settings_dialog);
+    document.getElementById('fm_nginx_recommend').addEventListener('click', HF.use_recommended_nginx_settings);
+    document.getElementById('fm_nginx_install').addEventListener('click', HF.open_nginx_install_confirm);
+    document.getElementById('fm_nginx_confirm_start').addEventListener('click', HF.start_nginx_install);
+    document.getElementById('fm_settings_client_max_body_size').addEventListener('input', HF.render_nginx_body_size_unit);
+    document.getElementById('fm_settings_reload_on_as_enabled').addEventListener('change', HF.sync_uwsgi_toggle_inputs);
+    document.getElementById('fm_settings_reload_on_rss_enabled').addEventListener('change', HF.sync_uwsgi_toggle_inputs);
+    var settings_tabs = document.querySelectorAll('[data-settings-tab]');
+    for (var settings_tab_index = 0; settings_tab_index < settings_tabs.length; settings_tab_index++) {
+        settings_tabs[settings_tab_index].addEventListener('click', function() {
+            HF.set_settings_tab(this.getAttribute('data-settings-tab'));
+        });
+    }
+    document.getElementById('fm_overwrite_confirm').addEventListener('click', function() {
+        var batch = HF.state.pending_upload;
+        HF.state.pending_upload = null;
+        HF.close_modal();
+        if (batch) {
+            HF.upload_batch(batch);
+        }
+    });
+    document.getElementById('fm_menu_open').addEventListener('click', function() {
+        HF.open_item(HF.state.context_item);
+    });
+    document.getElementById('fm_menu_open_binary').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.open_binary(HF.state.context_item);
+    });
+    document.getElementById('fm_menu_properties').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.open_properties(HF.state.context_item);
+    });
+    document.getElementById('fm_menu_terminal').addEventListener('click', function() {
+        HF.open_terminal(HF.state.context_item);
+    });
+    document.getElementById('fm_menu_download').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.trigger_download(HF.state.context_item);
+    });
+    document.getElementById('fm_menu_compress').addEventListener('click', function() {
+        var items = HF.context_selection(HF.state.context_item);
+        HF.hide_context_menus();
+        HF.open_archive_dialog(items);
+    });
+    document.getElementById('fm_menu_extract').addEventListener('click', function() {
+        var item = HF.state.context_item;
+        HF.hide_context_menus();
+        HF.start_archive_extract(item);
+    });
+    document.getElementById('fm_menu_copy').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.set_clipboard('copy', HF.context_selection(HF.state.context_item));
+    });
+    document.getElementById('fm_menu_cut').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.set_clipboard('cut', HF.context_selection(HF.state.context_item));
+    });
+    document.getElementById('fm_menu_paste').addEventListener('click', function() {
+        var item = HF.state.context_item;
+        if (item && item.type === 'directory') {
+            HF.run_paste(item.path);
+        }
+    });
+    document.getElementById('fm_menu_upload').addEventListener('click', function() {
+        var item = HF.state.context_item;
+        HF.hide_context_menus();
+        if (item && item.type === 'directory') {
+            HF.trigger_upload(item.path, item.name);
+        }
+    });
+    document.getElementById('fm_menu_rename').addEventListener('click', function() {
+        var item = HF.state.context_item;
+        HF.hide_context_menus();
+        HF.open_name_dialog('rename', item);
+    });
+    document.getElementById('fm_menu_delete').addEventListener('click', function() {
+        var items = HF.context_selection(HF.state.context_item);
+        HF.hide_context_menus();
+        HF.open_delete_dialog(items);
+    });
+    document.getElementById('fm_menu_copy_to').addEventListener('click', function() {
+        var items = HF.context_selection(HF.state.context_item);
+        HF.hide_context_menus();
+        HF.open_transfer_dialog('copy', items);
+    });
+    document.getElementById('fm_menu_move_to').addEventListener('click', function() {
+        var items = HF.context_selection(HF.state.context_item);
+        HF.hide_context_menus();
+        HF.open_transfer_dialog('move', items);
+    });
+    document.getElementById('fm_menu_new_folder').addEventListener('click', function() {
+        HF.hide_context_menus();
+        if (HF.state.current && HF.state.current.kind === 'directory' && !HF.get_write_block_reason(HF.state.current.path)) {
+            HF.open_name_dialog('create');
+        } else {
+            HF.set_write_block_status(HF.state.current ? HF.get_write_block_reason(HF.state.current.path) : HF.labels.system_folder_blocked);
+        }
+    });
+    document.getElementById('fm_menu_new_file').addEventListener('click', function() {
+        HF.hide_context_menus();
+        if (HF.state.current && HF.state.current.kind === 'directory' && !HF.get_write_block_reason(HF.state.current.path)) {
+            HF.open_name_dialog('create_file');
+        } else {
+            HF.set_write_block_status(HF.state.current ? HF.get_write_block_reason(HF.state.current.path) : HF.labels.system_folder_blocked);
+        }
+    });
+    document.getElementById('fm_menu_paste_here').addEventListener('click', function() {
+        if (HF.state.current && HF.state.current.kind === 'directory') {
+            HF.run_paste(HF.state.current.path);
+        } else {
+            HF.hide_context_menus();
+            HF.set_warning_status(HF.labels.clipboard_empty);
+        }
+    });
+    document.getElementById('fm_menu_upload_here').addEventListener('click', function() {
+        HF.hide_context_menus();
+        if (HF.state.current && HF.state.current.kind === 'directory' && HF.can_upload_to_path(HF.state.current.path)) {
+            HF.trigger_upload(HF.state.current.path, HF.path_title(HF.state.current.path));
+        } else {
+            HF.set_write_block_status(HF.state.current ? HF.get_write_block_reason(HF.state.current.path) : HF.labels.system_folder_blocked);
+        }
+    });
+    document.getElementById('fm_menu_terminal_here').addEventListener('click', function() {
+        HF.open_terminal(null);
+    });
+    document.getElementById('fm_menu_refresh').addEventListener('click', function() {
+        HF.hide_context_menus();
+        HF.refresh_current();
+    });
+    document.getElementById('fm_name_confirm').addEventListener('click', HF.submit_name_dialog);
+    document.getElementById('fm_name_input').addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            HF.submit_name_dialog();
+        }
+    });
+    document.getElementById('fm_delete_confirm').addEventListener('click', function() {
+        var items = HF.normalize_item_list(HF.state.delete_items && HF.state.delete_items.length ? HF.state.delete_items : [HF.state.delete_item]);
+        HF.close_modal();
+        if (items.length) {
+            HF.Util.ajax({
+                url: HF.api.batch_delete,
+                type: 'POST',
+                dataType: 'json',
+                data: { paths: JSON.stringify(HF.item_list_paths(items)) },
+                success: function(res) {
+                    if (!res || res.code !== 0) {
+                        HF.set_error_status((res && res.message) || HF.labels.operation_failed);
+                        return;
+                    }
+                    HF.set_status(HF.labels.delete_complete, 'success');
+                    HF.refresh_after_write();
+                },
+                error: function(xhr) {
+                    HF.set_error_status(HF.batch_error_message(xhr, HF.labels.operation_failed));
+                }
+            });
+        }
+    });
+    document.getElementById('fm_target_cancel').addEventListener('click', HF.close_modal);
+    document.getElementById('fm_target_confirm').addEventListener('click', HF.confirm_transfer);
+    document.getElementById('fm_target_up').addEventListener('click', function() {
+        if (HF.state.target_path !== '/') {
+            HF.load_target_directory(HF.state.target_parent || '/');
+        }
+    });
+    document.getElementById('fm_content').addEventListener('mousedown', HF.start_marquee_selection);
+    document.getElementById('fm_content').addEventListener('contextmenu', function(event) {
+        if (event.target.closest('.fm-item')) {
+            return;
+        }
+        event.preventDefault();
+        HF.state.context_item = null;
+        var writable_page = HF.state.current && HF.state.current.kind === 'directory';
+        var current_path = writable_page ? HF.state.current.path : '';
+        var system_reason = HF.get_write_block_reason(current_path);
+        HF.set_button_state('fm_menu_sort', !writable_page, '');
+        HF.update_sort_menu_state();
+        HF.set_button_state(
+            'fm_menu_new_folder',
+            !writable_page || !!HF.get_write_block_reason(current_path),
+            system_reason
+        );
+        HF.set_button_state(
+            'fm_menu_new_file',
+            !writable_page || !!HF.get_write_block_reason(current_path),
+            system_reason
+        );
+        document.getElementById('fm_menu_paste_here').style.display =
+            writable_page && HF.has_clipboard() ? 'flex' : 'none';
+        HF.set_button_state(
+            'fm_menu_paste_here',
+            !writable_page || !HF.can_paste_to_path(current_path),
+            system_reason
+        );
+        HF.set_button_state(
+            'fm_menu_upload_here',
+            !writable_page || HF.state.uploading || !HF.can_upload_to_path(current_path),
+            system_reason
+        );
+        HF.set_button_state('fm_menu_terminal_here', false, '');
+        if (system_reason) {
+            HF.set_write_block_status(system_reason);
+        }
+        HF.show_context_menu('fm_blank_menu', event.clientX, event.clientY);
+    });
+    document.getElementById('fm_content').addEventListener('dragenter', function(event) {
+        if (!HF.state.uploading && HF.state.current && HF.state.current.kind === 'directory' &&
+                HF.can_upload_to_path(HF.state.current.path) && HF.is_file_drag(event) && !event.target.closest('.fm-item')) {
+            event.preventDefault();
+            HF.show_drag_target(this, HF.state.current.path, HF.path_title(HF.state.current.path));
+        }
+    });
+    document.getElementById('fm_content').addEventListener('dragover', function(event) {
+        if (!HF.state.uploading && HF.state.current && HF.state.current.kind === 'directory' &&
+                HF.can_upload_to_path(HF.state.current.path) && HF.is_file_drag(event) && !event.target.closest('.fm-item')) {
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+        }
+    });
+    document.getElementById('fm_content').addEventListener('dragleave', function(event) {
+        if (!event.relatedTarget || !this.contains(event.relatedTarget)) {
+            HF.clear_drag_state();
+        }
+    });
+    document.getElementById('fm_content').addEventListener('drop', function(event) {
+        if (!HF.state.uploading && HF.state.current && HF.state.current.kind === 'directory' &&
+                HF.can_upload_to_path(HF.state.current.path) && HF.is_file_drag(event) && !event.target.closest('.fm-item')) {
+            HF.handle_file_drop(event, HF.state.current.path, HF.path_title(HF.state.current.path));
+        }
+    });
+
+    var close_buttons = document.querySelectorAll('.fm-dialog-close');
+    for (var close_index = 0; close_index < close_buttons.length; close_index++) {
+        close_buttons[close_index].addEventListener('click', HF.close_modal);
+    }
+    document.addEventListener('click', HF.hide_context_menus);
+    document.addEventListener('dragend', HF.clear_drag_state);
+    document.addEventListener('dragover', function(event) {
+        if (HF.is_file_drag(event)) {
+            event.preventDefault();
+        }
+    });
+    document.addEventListener('drop', function(event) {
+        if (HF.is_file_drag(event)) {
+            event.preventDefault();
+            HF.clear_drag_state();
+            HF.set_warning_status(HF.state.uploading ? HF.labels.upload_busy : HF.labels.select_upload_target);
+        }
+    });
+    window.addEventListener('scroll', function() {
+        HF.hide_item_hover_card();
+        HF.hide_context_menus();
+    }, true);
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            HF.hide_context_menus();
+            HF.close_modal();
+        }
+    });
+
+    (function() {
+        var content = document.getElementById('fm_content');
+        var longPressTimer = null;
+        var touchStartX = 0;
+        var touchStartY = 0;
+        var isLongPress = false;
+        var isDragging = false;
+        var isSelecting = false;
+        var scrollInterval = null;
+        var SCROLL_THRESHOLD = 50;
+        var SCROLL_SPEED = 8;
+        var DRAG_THRESHOLD = 12;
+        /* A drag with this much horizontal travel starts the marquee; only a
+         * nearly pure vertical drag scrolls the page. Diagonal marking is
+         * therefore far less likely to turn into an accidental scroll. */
+        var HORIZONTAL_TRIGGER = 16;
+        var touchStartOnBlank = false;
+        var isScrolling = false;
+        var scrollStartTop = 0;
+        var marqueeAccumulated = {};
+
+        function getScrollContainer() {
+            var node = content;
+            while (node && node !== document.body) {
+                var style = window.getComputedStyle(node);
+                if (/(auto|scroll)/.test(style.overflowY) &&
+                        node.scrollHeight > node.clientHeight) {
+                    return node;
+                }
+                node = node.parentElement;
+            }
+            return document.scrollingElement || document.documentElement;
+        }
+
+        function startScroll(direction) {
+            stopScroll();
+            scrollInterval = setInterval(function() {
+                var scroller = getScrollContainer();
+                scroller.scrollTop += direction * SCROLL_SPEED;
+
+                if (isSelecting) {
+                    updateMarqueeFromTouch();
+                }
+            }, 16);
+        }
+
+        function stopScroll() {
+            if (scrollInterval) {
+                clearInterval(scrollInterval);
+                scrollInterval = null;
+            }
+        }
+
+        function updateMarqueeFromTouch() {
+            if (!isSelecting) return;
+
+            var touch = window._lastTouch;
+            if (!touch) return;
+
+            updateMarqueeSelection(touch.clientX, touch.clientY);
+        }
+
+        function updateMarqueeSelection(cx, cy) {
+            if (!HF.state.selection_dragging) return;
+
+            var rect = HF.selection_rect(
+                HF.state.selection_start_x,
+                HF.state.selection_start_y,
+                cx,
+                cy
+            );
+
+            var width = rect.right - rect.left;
+            var height = rect.bottom - rect.top;
+
+            if (width > 3 || height > 3) {
+                HF.state.selection_moved = true;
+            }
+
+            var box = HF.ensure_selection_box();
+
+            box.style.display = HF.state.selection_moved ? 'block' : 'none';
+            box.style.left = rect.left + 'px';
+            box.style.top = rect.top + 'px';
+            box.style.width = width + 'px';
+            box.style.height = height + 'px';
+
+            if (!HF.state.selection_moved) return;
+
+            var selected = HF.state.selection_base.slice();
+            var seen = {};
+
+            selected.forEach(function(item) {
+                if (item && item.path) {
+                    seen[item.path] = true;
+                }
+            });
+
+            /* Union with everything marked earlier in this same drag. During
+             * auto-scroll the rectangle stays pinned to the finger while items
+             * scroll past it; keeping the union prevents already-marked files
+             * from being silently dropped. */
+            for (var path in marqueeAccumulated) {
+                if (Object.prototype.hasOwnProperty.call(marqueeAccumulated, path) && !seen[path]) {
+                    selected.push(marqueeAccumulated[path]);
+                    seen[path] = true;
+                }
+            }
+
+            HF.rendered_file_items().forEach(function(entry) {
+                if (entry.node.offsetParent === null || seen[entry.item.path]) {
+                    return;
+                }
+
+                if (HF.rects_intersect(
+                    rect,
+                    entry.node.getBoundingClientRect()
+                )) {
+                    selected.push(entry.item);
+                    seen[entry.item.path] = true;
+                    marqueeAccumulated[entry.item.path] = entry.item;
+                }
+            });
+
+            HF.set_selected_items(
+                selected,
+                selected.length ? selected[selected.length - 1] : null,
+                HF.state.selection_anchor
+            );
+        }
+
+        function isInFolderContent(clientX, clientY) {
+            var target = document.elementFromPoint(clientX, clientY);
+            var item = target ? target.closest('.fm-item') : null;
+
+            if (item) {
+                var main = item.querySelector('.fm-item-main');
+
+                if (main) {
+                    var rect = main.getBoundingClientRect();
+
+                    if (
+                        clientX >= rect.left &&
+                        clientX <= rect.right &&
+                        clientY >= rect.top &&
+                        clientY <= rect.bottom
+                    ) {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        content.addEventListener('touchstart', function(e) {
+            var touch = e.touches[0];
+
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            touchStartOnBlank = !isInFolderContent(
+                touchStartX,
+                touchStartY
+            );
+
+            if (!touchStartOnBlank) {
+                return;
+            }
+
+            if (HF.state.drag_item) {
+                return;
+            }
+
+            isLongPress = false;
+            isDragging = false;
+            isSelecting = false;
+            isScrolling = false;
+            scrollStartTop = getScrollContainer().scrollTop;
+            marqueeAccumulated = {};
+
+            HF.state.selection_dragging = false;
+            HF.state.selection_moved = false;
+
+            HF.state.selection_base =
+                (e.ctrlKey || e.metaKey)
+                    ? HF.selected_items()
+                    : [];
+
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                HF.clear_selection();
+            }
+
+            HF.state.selection_start_x = touchStartX;
+            HF.state.selection_start_y = touchStartY;
+            HF.state.selection_anchor =
+                HF.state.selection_base.length
+                    ? HF.state.selection_base[0]
+                    : null;
+
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+            }
+
+            longPressTimer = setTimeout(function() {
+                longPressTimer = null;
+
+                if (
+                    !isDragging &&
+                    touchStartOnBlank &&
+                    !HF.state.drag_item
+                ) {
+                    isLongPress = true;
+                    HF.show_context_menu(
+                        'fm_blank_menu',
+                        touchStartX,
+                        touchStartY
+                    );
+                }
+            }, 500);
+        }, { passive: true });
+
+        content.addEventListener('touchmove', function(e) {
+            /* Native scroll already in progress: the event is not cancelable
+             * and calling preventDefault() would only log a console warning. */
+            if (e.cancelable === false) {
+                return;
+            }
+            var touch = e.touches[0];
+
+            window._lastTouch = touch;
+
+            if (HF.state.drag_item) {
+                isSelecting = false;
+                isDragging = false;
+                HF.state.selection_dragging = false;
+
+                if (HF.state.selection_box) {
+                    HF.state.selection_box.style.display = 'none';
+                }
+
+                var dragClientY = touch.clientY;
+                var dragTopDist = dragClientY;
+                var dragBottomDist =
+                    window.innerHeight - dragClientY;
+
+                if (dragTopDist < SCROLL_THRESHOLD) {
+                    startScroll(-1);
+                } else if (dragBottomDist < SCROLL_THRESHOLD) {
+                    startScroll(1);
+                } else {
+                    stopScroll();
+                }
+
+                return;
+            }
+
+            if (!touchStartOnBlank) {
+                return;
+            }
+
+            var dx = touch.clientX - touchStartX;
+            var dy = touch.clientY - touchStartY;
+            var absDx = Math.abs(dx);
+            var absDy = Math.abs(dy);
+            var distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (!isDragging && !isScrolling) {
+                if (distance < DRAG_THRESHOLD) {
+                    /* Block the browser's own scrolling early, so a diagonal
+                     * marquee never fights a scroll that has already begun. */
+                    if (distance > 4) {
+                        e.preventDefault();
+                    }
+                    return;
+                }
+
+                if (absDx >= HORIZONTAL_TRIGGER) {
+                    /* Any drag with a clear horizontal component starts the
+                     * marquee, so a slanted marking gesture never turns into
+                     * a page scroll. */
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                    isDragging = true;
+                    isSelecting = true;
+                    HF.state.selection_dragging = true;
+
+                    HF.state.selection_base =
+                        HF.state.selection_base.length
+                            ? HF.state.selection_base.slice()
+                            : [];
+
+                    HF.ensure_selection_box();
+
+                    updateMarqueeSelection(
+                        touch.clientX,
+                        touch.clientY
+                    );
+
+                    document
+                        .getElementById('fm_content')
+                        .classList.add('selecting');
+
+                    HF.safe_vibrate(10);
+                } else if ((absDx < 8 && absDy > 30) || absDy > 120) {
+                    /* Almost pure vertical (or a very long vertical swipe):
+                     * scroll manually. Between the two thresholds the gesture
+                     * stays "undecided" so a steep diagonal drag still has a
+                     * chance to become a marquee once its horizontal travel
+                     * crosses HORIZONTAL_TRIGGER. */
+                    if (longPressTimer) {
+                        clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                    }
+                    isScrolling = true;
+                    e.preventDefault();
+                } else {
+                    /* Undecided: keep blocking native scroll and wait. */
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            if (isScrolling) {
+                /* 1:1 manual scroll: content stays glued to the finger. */
+                e.preventDefault();
+                var scroller = getScrollContainer();
+                scroller.scrollTop =
+                    scrollStartTop + (touchStartY - touch.clientY);
+                return;
+            }
+
+            if (!isDragging) {
+                return;
+            }
+
+            e.preventDefault();
+
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+
+            updateMarqueeSelection(
+                touch.clientX,
+                touch.clientY
+            );
+
+            var clientY = touch.clientY;
+            var topDist = clientY;
+            var bottomDist =
+                window.innerHeight - clientY;
+
+            if (topDist < SCROLL_THRESHOLD) {
+                startScroll(-1);
+            } else if (bottomDist < SCROLL_THRESHOLD) {
+                startScroll(1);
+            } else {
+                stopScroll();
+            }
+        }, { passive: false });
+
+        content.addEventListener('touchend', function(e) {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+
+            stopScroll();
+            window._lastTouch = null;
+
+            if (isSelecting) {
+                HF.state.selection_dragging = false;
+
+                if (HF.state.selection_box) {
+                    HF.state.selection_box.style.display = 'none';
+                }
+
+                document
+                    .getElementById('fm_content')
+                    .classList.remove('selecting');
+            }
+
+            if (touchStartOnBlank && !HF.state.drag_item) {
+                if (isSelecting) {
+                    if (!isDragging && !isLongPress) {
+                        HF.clear_selection();
+                    }
+                } else {
+                    if (!isLongPress) {
+                        HF.clear_selection();
+                    }
+                }
+            }
+
+            isSelecting = false;
+            isDragging = false;
+            isScrolling = false;
+            isLongPress = false;
+            HF.state.selection_dragging = false;
+            touchStartOnBlank = false;
+        }, { passive: true });
+    })();
+
+
+    /*
+     * Reusable desktop window manager
+     * --------------------------------
+     * One implementation owns focus, z-index, drag bounds, resize handles,
+     * maximize/minimize, and the taskbar.  File viewers use new instances;
+     * legacy dialogs are upgraded in-place the first time HF.open_modal() opens
+     * them, so forms and progress dialogs get the same window affordances.
+     */
+    /* Escape closes only the front independent window.  It deliberately leaves
+     * minimized windows untouched so their taskbar buttons remain recoverable. */
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && HF.window_manager.active &&
+                !HF.window_manager.active.legacy && !event.defaultPrevented) {
+            event.preventDefault();
+            HF.window_manager.close(HF.window_manager.active);
+        }
+    });
+
+
+    HF.load_preferences(function() {
+        HF.refresh_navigation(function() {
+            var restored = false;
+            if (HF.state.preferences.restore_last_directory === 1) {
+                var last = HF.state.preferences.last_directory || '';
+                if (last && last.charAt(0) === '/') {
+                    HF.open_path(last, true);
+                    restored = true;
+                }
+            }
+            if (!restored) {
+                HF.show_virtual('quick_access', true);
+            }
+            document.getElementById('fm_address').addEventListener('click', function(e) {
+                if (e.target.closest('.fm-crumb')) {
+                    return;
+                }
+                if (HF.state.current && HF.state.current.kind === 'directory' && !HF.state.address_editing) {
+                    HF.enter_address_edit();
+                }
+            });
+        });
+    });
+})(window.HarborFile);
+</script>
+
+<%+footer%>
