@@ -1,0 +1,5 @@
+#!/usr/bin/ucode
+
+'use strict';
+
+require('harbor.io').main();
